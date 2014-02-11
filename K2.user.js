@@ -41,16 +41,68 @@ function jQueryInclude(callback) {
  */
 jQueryInclude(function() {
 
-  jQ("#CmdClearStorage").click(function() {
-    localStorage.clear();
-  });
-
   jQ("#top").hide();
   jQ("#header").hide();
   jQ("#footerMain").hide();
   jQ("option").html(function() {
     return jQ(this).val() + " - " + jQ(this).html();
   });
+
+  jQ("#content_spc").css("height", "auto");
+
+  var HackUI = '<div style="text-align:center;">'
+          + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
+          + '<input type="button" id="CmdSanction" value="Start Sanctioning"/>'
+          + '<input type="button" id="CmdStatus" value="Show Status"/>'
+          + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
+          + '</div>';
+
+  if (jQ("#tfhover").is(":visible")) {
+    jQ("#tfhover").after(HackUI);
+  }
+
+  jQ("[id^=Cmd]").css({
+    "margin": "10px",
+    "padding": "5px"
+  });
+
+  /**
+   *
+   */
+  var SanctionAppID = function(AppID) {
+    jQ.ajax({
+      type: 'POST',
+      url: BaseURL + 'admin_pages/kp_fwd_post.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      },
+      data: {
+        'rej_reason': '',
+        'phy_veri': 'undefined',
+        'fwd_to': '10047',
+        'applicant_id': AppID
+      }
+    }).done(function(data) {
+      try {
+        localStorage.setItem('Status', data);
+      }
+      catch (e) {
+        localStorage.setItem('Server Error:', e);
+      }
+    }).fail(function(msg) {
+      localStorage.setItem('AjaxFail', msg);
+    });
+  };
+
+  jQ("#CmdClearStorage").click(function() {
+    localStorage.clear();
+  });
+
+  jQ("#CmdSanction").click(function() {
+    SanctionAppID(jQ("#AppIDs").val());
+  });
+
   /**
    * Continious Polling for Server Response
    *
