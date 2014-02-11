@@ -45,6 +45,12 @@ jQueryInclude(function() {
     localStorage.clear();
   });
 
+  jQ("#top").hide();
+  jQ("#header").hide();
+  jQ("#footerMain").hide();
+  jQ("option").html(function() {
+    return jQ(this).val() + " - " + jQ(this).html();
+  });
   /**
    * Continious Polling for Server Response
    *
@@ -67,8 +73,7 @@ jQueryInclude(function() {
       var LastRespTime = new Date();
       localStorage.setItem("LastRespTime", LastRespTime.getTime());
       localStorage.setItem("TryLogin", "Yes");
-      var URL = BaseURL + "/admin_pages/kp_login_input.php?stake_cd="
-              + "43.46.43.47.103&ref_stake_cd=.103";
+      var URL = BaseURL + "admin_pages/kp_homepage.php";
       parent.window.open(URL, "_self");
     }
     setTimeout(RefreshOnWait, TimeOut);
@@ -77,4 +82,6 @@ jQueryInclude(function() {
 
   RefreshOnWait();
 
+  var LastRespTime = new Date();
+  localStorage.setItem("LastRespTime", LastRespTime.getTime());
 });
