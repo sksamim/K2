@@ -157,7 +157,7 @@ jQueryInclude(function() {
         var AppNo = '', AppName = '';
         jQ(data).find("table.tftable tr td:nth-child(2)")
                 .each(function(Index, Item) {
-          AppNo = jQ(Item).text().substr(1, 20);
+          AppNo = jQ(Item).text().substr(0, 20);
           AppName = jQ(Item).next().text();
           if (AppNo.length > 0) {
             localStorage.setItem('AppNo_' + SchCode + '_' + Index + '_No', AppNo);
