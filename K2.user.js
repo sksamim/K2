@@ -20,18 +20,17 @@
  * @returns {undefined}
  */
 function jQueryInclude(callback) {
-  var script = document.createElement("script");
+  var jQueryScript = document.createElement("script");
   var jQueryCDN = "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js";
-  script.setAttribute("src", jQueryCDN);
-
-  script.addEventListener('load', function() {
-    var script = document.createElement("script");
-    script.textContent = 'window.jQ=jQuery.noConflict(true);'
+  jQueryScript.setAttribute("src", jQueryCDN);
+  jQueryScript.addEventListener('load', function() {
+    var UserScript = document.createElement("script");
+    UserScript.textContent = 'window.jQ=jQuery.noConflict(true);'
             + 'var BaseURL = "http://wbkanyashree.gov.in/";'
             + '(' + callback.toString() + ')();';
-    document.body.appendChild(script);
+    document.head.appendChild(UserScript);
   }, false);
-  document.body.appendChild(script);
+  document.head.appendChild(jQueryScript);
 }
 
 /**
@@ -52,7 +51,8 @@ jQueryInclude(function() {
 
   var HackUI = '<div style="text-align:center;">'
           + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
-          + '<input type="button" id="CmdSanction" value="Start Sanctioning"/>'
+          + '<input type="button" id="CmdSanction" value="Add To Sanction"/>'
+          + '<input type="button" id="CmdInstns" value="Pending List"/>'
           + '<input type="button" id="CmdStatus" value="Show Status"/>'
           + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
           + '</div>';
@@ -67,9 +67,41 @@ jQueryInclude(function() {
   });
 
   /**
-   *
+   * admin_pages/kp_sanction_order_generation_insert.php?
+   * applicant_id=19200301cl0130000001
+   * sanction_order=19200700213003
+   * type=add
    */
+  var AddToSanctionAppID = function(AppID) {
+    localStorage.setItem('Status', 'AddToSanctionAppID: ' + AppID);
+    var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
+    jQ.ajax({
+      type: 'GET',
+      url: BaseURL + 'admin_pages/kp_sanction_order_generation_insert.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      },
+      data: {
+        'applicant_id': AppID,
+        'sanction_order': SanctionOrderNo,
+        'type': 'add'
+      }
+    }).done(function(data) {
+      try {
+        var SanctionStatus = jQ(data).find("div.sanction_block").next().text();
+        localStorage.setItem('AddToSanction:' + AppID, SanctionStatus);
+      }
+      catch (e) {
+        localStorage.setItem('AddToSanction Error:' + AppID, e);
+      }
+    }).fail(function(msg) {
+      localStorage.setItem('AddToSanction Fail:' + AppID, msg);
+    });
+  };
+
   var SanctionAppID = function(AppID) {
+    localStorage.setItem('Status', 'SanctionAppID: ' + AppID);
     jQ.ajax({
       type: 'POST',
       url: BaseURL + 'admin_pages/kp_fwd_post.php',
@@ -85,14 +117,230 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        localStorage.setItem('Status', data);
+        localStorage.setItem('SanctionAppID:' + AppID, data);
       }
       catch (e) {
-        localStorage.setItem('Server Error:', e);
+        localStorage.setItem('SanctionAppID Error:' + AppID, e);
       }
     }).fail(function(msg) {
-      localStorage.setItem('AjaxFail', msg);
+      localStorage.setItem('SanctionAppID Fail:' + AppID, msg);
     });
+  };
+
+  /**
+   * kp_block_verify_applicant_list.php?
+   * schcd=19202103702&
+   * status=10042&pending=
+   *
+   * block_select=192021&schcd=19202103702&status=10042&mode=search&download=Submit
+   *
+   * @param {type} ClgCode
+   * @returns {undefined}
+   */
+
+  var GetSchAppList = function(SchCode) {
+    localStorage.setItem('Status', 'GetSchAppList: ' + SchCode);
+    jQ.ajax({
+      type: 'GET',
+      url: BaseURL + 'admin_pages/kp_block_verify_applicant_list.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      },
+      data: {
+        'status': '10042',
+        'schcd': SchCode,
+        'pending': ''
+      }
+    }).done(function(data) {
+      try {
+        var AppNo = '', AppName = '';
+        jQ(data).find("table.tftable tr td:nth-child(2)")
+                .each(function(Index, Item) {
+          AppNo = jQ(Item).text().substr(1, 20);
+          AppName = jQ(Item).next().text();
+          if (AppNo.length > 0) {
+            localStorage.setItem('AppNo_' + SchCode + '_' + Index + '_No', AppNo);
+            localStorage.setItem('AppNo_' + SchCode + '_'
+                    + Index + '_Name', AppName);
+          }
+        });
+      }
+      catch (e) {
+        localStorage.setItem('GetSchAppList Error:', e);
+      }
+    }).fail(function(msg) {
+      localStorage.setItem('GetSchAppList Fail:', msg);
+    });
+  };
+
+  var GetInstList = function(BlockCode) {
+    localStorage.setItem('Status', 'GetInstList: ' + BlockCode);
+    jQ.ajax({
+      type: 'POST',
+      url: BaseURL + 'admin_pages/ajax/find_school_for_block.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      },
+      data: {
+        'block_code': BlockCode,
+        'slc_name': 'schcd',
+        'slc_class': ''
+      }
+    }).done(function(data) {
+      try {
+        var SchCode = '';
+        jQ(data).find("option").each(function(Index, Item) {
+          SchCode = jQ(Item).val();
+          if (SchCode.length > 0) {
+            localStorage.setItem('SchCode_' + BlockCode + '_' + Index, SchCode);
+            GetSchAppList(SchCode);
+          }
+        });
+      }
+      catch (e) {
+        localStorage.setItem('GetInstList Error:', e);
+      }
+    }).fail(function(msg) {
+      localStorage.setItem('GetInstList Fail:', msg);
+    });
+  };
+
+  /**
+   * kp_verify_applicant_list_clg.php?status=10042&schcd=19200301cl
+   *
+   * @param {type} BlockCode
+   * @returns {undefined}
+   */
+
+  var GetClgAppList = function(ClgCode) {
+    localStorage.setItem('Status', 'GetClgAppList: ' + ClgCode);
+    jQ.ajax({
+      type: 'GET',
+      url: BaseURL + 'admin_pages/kp_verify_applicant_list_clg.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      },
+      data: {
+        'status': '10042',
+        'schcd': ClgCode
+      }
+    }).done(function(data) {
+      try {
+        var AppNo = '', AppName = '';
+        jQ(data).find("table.tftable tr td:nth-child(2)")
+                .each(function(Index, Item) {
+          AppNo = jQ(Item).text();
+          AppName = jQ(Item).next().text();
+          if (AppNo.length > 0) {
+            localStorage.setItem('AppNo_' + ClgCode + '_' + Index + '_No', AppNo);
+            localStorage.setItem('AppNo_' + ClgCode + '_'
+                    + Index + '_Name', AppName);
+          }
+        });
+      }
+      catch (e) {
+        localStorage.setItem('GetClgAppList Error:', e);
+      }
+    }).fail(function(msg) {
+      localStorage.setItem('GetClgAppList Fail:', msg);
+    });
+  };
+
+  /**
+   * admin_pages/kp_block_verify_list_clg.php?block_code=192003
+   *
+   * @param {type} BlockCode
+   * @returns {undefined}
+   */
+
+  var GetClgList = function(BlockCode) {
+    localStorage.setItem('Status', 'GetClgList: ' + BlockCode);
+    jQ.ajax({
+      type: 'GET',
+      url: BaseURL + 'admin_pages/kp_block_verify_list_clg.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      },
+      data: {
+        'block_code': BlockCode
+      }
+    }).done(function(data) {
+      try {
+        var ClgCode = '', Status = 0;
+        jQ(data).find("table.tftable a").each(function(Index, Item) {
+          ClgCode = jQ(Item).attr("onclick").substr(13, 10);
+          Status = jQ(Item).attr("onclick").indexOf('10042');
+          if ((ClgCode.length > 0) && (Status > 0)) {
+            localStorage.setItem('ClgCode_' + BlockCode + '_' + Index, ClgCode);
+            GetClgAppList(ClgCode);
+          }
+        });
+      }
+      catch (e) {
+        localStorage.setItem('GetClgList Error:', e);
+      }
+    }).fail(function(msg) {
+      localStorage.setItem('GetClgList Fail:', msg);
+    });
+  };
+
+  var GetBlockList = function() {
+    localStorage.setItem('Status', 'Request Blocks');
+    jQ.ajax({
+      type: 'GET',
+      url: BaseURL + 'admin_pages/kp_dpmu_verify_block_list.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      }
+    }).done(function(data) {
+      try {
+        var BlockCode = '';
+        jQ(data).find("#block_select option").each(function(Index, Item) {
+          BlockCode = jQ(Item).val();
+          if (BlockCode.length > 0) {
+            //localStorage.setItem('BlockCode_' + Index, BlockCode);
+            GetInstList(BlockCode);
+            //GetClgList(BlockCode);
+          }
+        });
+        localStorage.setItem('Status', 'Success');
+      }
+      catch (e) {
+        localStorage.setItem('GetBlockList Error:', e);
+      }
+    }).fail(function(msg) {
+      localStorage.setItem('GetBlockList Fail:', msg);
+    });
+  };
+
+  var LoadStoredAppIDs = function(ToDo) {
+    localStorage.setItem('Status', 'Load AppIDs: ' + ToDo);
+    var Status = [], AppIDs = [];
+    jQ.each(localStorage, function(Key, Value) {
+      if (Key.search("AppNo") >= 0) {
+        if (Key.search("_No") > 0) {
+          AppIDs.push(Value);
+          if (ToDo === "Sanction") {
+            SanctionAppID(Value);
+          } else if (ToDo === "Add") {
+            AddToSanctionAppID(Value);
+          }
+        }
+        if (Key.search("_Name") > 0) {
+          Status.push(Value);
+        }
+      }
+    });
+
+    if (jQ("#AppIDs").val().length === 0) {
+      jQ("#AppIDs").val(AppIDs.join(","));
+    }
+    return Status;
   };
 
   jQ("#CmdClearStorage").click(function() {
@@ -100,7 +348,30 @@ jQueryInclude(function() {
   });
 
   jQ("#CmdSanction").click(function() {
-    SanctionAppID(jQ("#AppIDs").val());
+    LoadStoredAppIDs("Add");
+  });
+
+  jQ("#CmdInstns").click(function() {
+    GetBlockList();
+  });
+
+  jQ("#CmdStatus").click(function() {
+    if (jQ("#CmdStatus").val() === "Show Status") {
+      jQ("#CmdStatus").val("Hide Status");
+      jQ("#AppIDs").hide();
+      var vals = LoadStoredAppIDs("NoSanction");
+      var StatusDiv = document.createElement("div");
+      StatusDiv.setAttribute("id", "AppStatus");
+      jQ("#AppIDs").parent().append(StatusDiv);
+      jQ("#AppStatus").html("<ol><li>" + vals.join("</li><li>")
+              + "</li></ol>");
+      jQ("#AppStatus li").css("list-style-type", "decimal-leading-zero");
+    } else {
+
+      jQ("#AppStatus").remove();
+      jQ("#AppIDs").show();
+      jQ("#CmdStatus").val("Show Status");
+    }
   });
 
   /**
