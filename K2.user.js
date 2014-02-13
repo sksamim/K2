@@ -26,8 +26,8 @@ function jQueryInclude(callback) {
   jQueryScript.addEventListener('load', function() {
     var UserScript = document.createElement("script");
     UserScript.textContent = 'window.jQ=jQuery.noConflict(true);'
-            + 'var BaseURL = "http://wbkanyashree.gov.in/";'
-            + '(' + callback.toString() + ')();';
+        + 'var BaseURL = "http://wbkanyashree.gov.in/";'
+        + '(' + callback.toString() + ')();';
     document.head.appendChild(UserScript);
   }, false);
   document.head.appendChild(jQueryScript);
@@ -50,12 +50,12 @@ jQueryInclude(function() {
   jQ("#content_spc").css("height", "auto");
 
   var HackUI = '<div style="text-align:center;clear:both;"><span id="Msg"></span>'
-          + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
-          + '<input type="button" id="CmdInstns" value="Pending List"/>'
-          + '<input type="button" id="CmdStatus" value="Show Status"/>'
-          + '<input type="button" id="CmdSanction" value="Add To Sanction"/>'
-          + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
-          + '</div>';
+      + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
+      + '<input type="button" id="CmdInstns" value="Pending List"/>'
+      + '<input type="button" id="CmdStatus" value="Show Status"/>'
+      + '<input type="button" id="CmdSanction" value="Add To Sanction"/>'
+      + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
+      + '</div>';
 
   if (jQ("#intra_body_area").is(":visible")) {
     jQ("#intra_body_area").after(HackUI);
@@ -167,29 +167,29 @@ jQueryInclude(function() {
         var AppNo = '', AppName = '', AppIndex = 0;
 
         jQ(data).find("table.tftable tr td:nth-child(2)")
-                .each(function(Index, Item) {
-                  AppNo = jQ(Item).text().substr(0, 20);
-                  AppName = jQ(Item).next().text();
-                  if (AppNo.length > 0) {
-                    AppIndex = parseInt(localStorage.getItem('AppCount')) + 1;
-                    localStorage.setItem('AppNo_' + AppIndex + '_No', AppNo);
-                    localStorage.setItem('AppNo_' + AppIndex + '_Name', AppName);
-                    localStorage.setItem('AppCount', AppIndex);
-                    jQ("#Msg").text('AppCount: ' + AppIndex);
-                  }
-                });
+            .each(function(Index, Item) {
+          AppNo = jQ(Item).text().substr(0, 20);
+          AppName = jQ(Item).next().text();
+          if (AppNo.length > 0) {
+            AppIndex = parseInt(localStorage.getItem('AppCount')) + 1;
+            localStorage.setItem('AppNo_' + AppIndex + '_No', AppNo);
+            localStorage.setItem('AppNo_' + AppIndex + '_Name', AppName);
+            localStorage.setItem('AppCount', AppIndex);
+            jQ("#Msg").text('AppCount: ' + AppIndex);
+          }
+        });
       }
       catch (e) {
         localStorage.setItem('GetSchAppList Error:', e);
       }
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     }).fail(function(msg) {
-      localStorage.setItem('GetSchAppList Fail:', msg);
+      localStorage.setItem('GetSchAppList Fail:', msg.statusText);
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
 
-  var GetInstList = function(BlockCode) {
+  var GetSchList = function(BlockCode) {
     localStorage.setItem('Status', 'GetInstList: ' + BlockCode);
     localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
     jQ.ajax({
@@ -206,16 +206,16 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        var SchCode = '', InstIndex = 0;
+        var SchCode = '', SchIndex = 0;
 
         jQ(data).find("option").each(function(Index, Item) {
           SchCode = jQ(Item).val();
           if (SchCode.length > 0) {
-            InstIndex = parseInt(localStorage.getItem('InstCount')) + 1;
-            localStorage.setItem('SchCode_' + InstIndex, SchCode);
-            localStorage.setItem('InstCount', InstIndex);
-            jQ("#Msg").text('InstCount: ' + InstIndex);
-            //GetSchAppList(SchCode);
+            SchIndex = parseInt(localStorage.getItem('SchCount')) + 1;
+            localStorage.setItem('SchCode_' + SchIndex, SchCode);
+            localStorage.setItem('SchCount', SchIndex);
+            jQ("#Msg").text('SchCount: ' + SchIndex);
+            GetSchAppList(SchCode);
           }
         });
       }
@@ -253,17 +253,18 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        var AppNo = '', AppName = '';
+        var AppNo = '', AppName = '', AppCount = 0;
         jQ(data).find("table.tftable tr td:nth-child(2)")
-                .each(function(Index, Item) {
-                  AppNo = jQ(Item).text();
-                  AppName = jQ(Item).next().text();
-                  if (AppNo.length > 0) {
-                    localStorage.setItem('AppNo_' + ClgCode + '_' + Index + '_No', AppNo);
-                    localStorage.setItem('AppNo_' + ClgCode + '_'
-                            + Index + '_Name', AppName);
-                  }
-                });
+            .each(function(Index, Item) {
+          AppNo = jQ(Item).text();
+          AppName = jQ(Item).next().text();
+          if (AppNo.length > 0) {
+            AppCount = parseInt(localStorage.getItem('ClgAppCount')) + 1;
+            localStorage.setItem('AppNo_' + AppCount + '_No', AppNo);
+            localStorage.setItem('AppNo_' + AppCount + '_Name', AppName);
+            localStorage.setItem('ClgAppCount', AppCount);
+          }
+        });
       }
       catch (e) {
         localStorage.setItem('GetClgAppList Error:', e);
@@ -297,12 +298,14 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        var ClgCode = '', Status = 0;
+        var ClgCode = '', Status = 0, ClgIndex = 0;
         jQ(data).find("table.tftable a").each(function(Index, Item) {
           ClgCode = jQ(Item).attr("onclick").substr(13, 10);
           Status = jQ(Item).attr("onclick").indexOf('10042');
           if ((ClgCode.length > 0) && (Status > 0)) {
-            localStorage.setItem('ClgCode_' + BlockCode + '_' + Index, ClgCode);
+            ClgIndex = parseInt(localStorage.getItem('ClgCount')) + 1;
+            localStorage.setItem('ClgCode_' + ClgIndex, ClgCode);
+            localStorage.setItem('ClgCount', ClgIndex);
             GetClgAppList(ClgCode);
           }
         });
@@ -334,7 +337,7 @@ jQueryInclude(function() {
           BlockCode = jQ(Item).val();
           if (BlockCode.length > 0) {
             localStorage.setItem('BlockCode_' + Index, BlockCode);
-            //GetInstList(BlockCode);
+            GetSchList(BlockCode);
             GetClgList(BlockCode);
           }
         });
@@ -377,6 +380,13 @@ jQueryInclude(function() {
 
   jQ("#CmdClearStorage").click(function() {
     localStorage.clear();
+    localStorage.setItem('AjaxPending', 0);
+    localStorage.setItem('AppCount', 0);
+    localStorage.setItem('ClgAppCount', 0);
+    localStorage.setItem('ClgCount', 0);
+    localStorage.setItem('SchCount', 0);
+    var LastRespTime = new Date();
+    localStorage.setItem("LastRespTime", LastRespTime.getTime());
   });
 
   jQ("#CmdSanction").click(function() {
@@ -390,8 +400,10 @@ jQueryInclude(function() {
   });
 
   jQ("#CmdInstns").click(function() {
-    localStorage.setItem('InstCount', 0);
+    localStorage.setItem('SchCount', 0);
     localStorage.setItem('AppCount', 0);
+    localStorage.setItem('ClgCount', 0);
+    localStorage.setItem('ClgAppCount', 0);
     GetBlockList();
   });
 
@@ -404,7 +416,7 @@ jQueryInclude(function() {
       StatusDiv.setAttribute("id", "AppStatus");
       jQ("#AppIDs").parent().append(StatusDiv);
       jQ("#AppStatus").html("<ol><li>" + vals.join("</li><li>")
-              + "</li></ol>");
+          + "</li></ol>");
       jQ("#AppStatus li").css("list-style-type", "decimal-leading-zero");
     } else {
 
@@ -447,4 +459,8 @@ jQueryInclude(function() {
   var LastRespTime = new Date();
   localStorage.setItem("LastRespTime", LastRespTime.getTime());
   localStorage.setItem('AjaxPending', 0);
+  localStorage.setItem('SchCount', 0);
+  localStorage.setItem('AppCount', 0);
+  localStorage.setItem('ClgCount', 0);
+  localStorage.setItem('ClgAppCount', 0);
 });
