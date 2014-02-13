@@ -46,9 +46,7 @@ jQueryInclude(function() {
   jQ("option").html(function() {
     return jQ(this).val() + " - " + jQ(this).html();
   });
-
   jQ("#content_spc").css("height", "auto");
-
   var HackUI = '<div style="text-align:center;clear:both;"><span id="Msg"></span>'
       + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
       + '<input type="button" id="CmdInstns" value="Pending List"/>'
@@ -56,7 +54,6 @@ jQueryInclude(function() {
       + '<input type="button" id="CmdSanction" value="Add To Sanction"/>'
       + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
       + '</div>';
-
   if (jQ("#intra_body_area").is(":visible")) {
     jQ("#intra_body_area").after(HackUI);
   }
@@ -65,7 +62,6 @@ jQueryInclude(function() {
     "margin": "10px",
     "padding": "5px"
   });
-
   /**
    * admin_pages/kp_sanction_order_generation_insert.php?
    * applicant_id=19200301cl0130000001
@@ -105,7 +101,6 @@ jQueryInclude(function() {
       localStorage.setItem('AddToSanction Fail:' + AppID, FailMsg.statusText);
     });
   };
-
   var SanctionAppID = function(AppID) {
     localStorage.setItem('Status', 'SanctionAppID: ' + AppID);
     localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
@@ -135,7 +130,6 @@ jQueryInclude(function() {
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
-
   /**
    * kp_block_verify_applicant_list.php?
    * schcd=19202103702&
@@ -165,7 +159,6 @@ jQueryInclude(function() {
     }).done(function(data) {
       try {
         var AppNo = '', AppName = '', AppIndex = 0;
-
         jQ(data).find("table.tftable tr td:nth-child(2)")
             .each(function(Index, Item) {
           AppNo = jQ(Item).text().substr(0, 20);
@@ -175,7 +168,6 @@ jQueryInclude(function() {
             localStorage.setItem('AppNo_' + AppIndex + '_No', AppNo);
             localStorage.setItem('AppNo_' + AppIndex + '_Name', AppName);
             localStorage.setItem('AppCount', AppIndex);
-            jQ("#Msg").text('AppCount: ' + AppIndex);
           }
         });
       }
@@ -188,7 +180,6 @@ jQueryInclude(function() {
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
-
   var GetSchList = function(BlockCode) {
     localStorage.setItem('Status', 'GetInstList: ' + BlockCode);
     localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
@@ -207,14 +198,12 @@ jQueryInclude(function() {
     }).done(function(data) {
       try {
         var SchCode = '', SchIndex = 0;
-
         jQ(data).find("option").each(function(Index, Item) {
           SchCode = jQ(Item).val();
           if (SchCode.length > 0) {
             SchIndex = parseInt(localStorage.getItem('SchCount')) + 1;
             localStorage.setItem('SchCode_' + SchIndex, SchCode);
             localStorage.setItem('SchCount', SchIndex);
-            jQ("#Msg").text('SchCount: ' + SchIndex);
             GetSchAppList(SchCode);
           }
         });
@@ -228,7 +217,6 @@ jQueryInclude(function() {
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
-
   /**
    * kp_verify_applicant_list_clg.php?status=10042&schcd=19200301cl
    *
@@ -237,7 +225,6 @@ jQueryInclude(function() {
    */
 
   var GetClgAppList = function(ClgCode) {
-    jQ("#Msg").text('GetClgAppList: ' + ClgCode);
     localStorage.setItem('Status', 'GetClgAppList: ' + ClgCode);
     localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
     jQ.ajax({
@@ -275,7 +262,6 @@ jQueryInclude(function() {
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
-
   /**
    * admin_pages/kp_block_verify_list_clg.php?block_code=192003
    *
@@ -319,7 +305,6 @@ jQueryInclude(function() {
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
-
   var GetBlockList = function() {
     localStorage.setItem('Status', 'Request Blocks');
     localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
@@ -352,7 +337,6 @@ jQueryInclude(function() {
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
-
   var LoadStoredAppIDs = function(ToDo) {
     localStorage.setItem('Status', 'Load AppIDs: ' + ToDo);
     var Status = [], AppIDs = [];
@@ -371,13 +355,11 @@ jQueryInclude(function() {
         }
       }
     });
-
     if (jQ("#AppIDs").val().length === 0) {
       jQ("#AppIDs").val(AppIDs.join(","));
     }
     return Status;
   };
-
   jQ("#CmdClearStorage").click(function() {
     localStorage.clear();
     localStorage.setItem('AjaxPending', 0);
@@ -388,7 +370,6 @@ jQueryInclude(function() {
     var LastRespTime = new Date();
     localStorage.setItem("LastRespTime", LastRespTime.getTime());
   });
-
   jQ("#CmdSanction").click(function() {
     var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
     if (SanctionOrderNo === null) {
@@ -398,7 +379,6 @@ jQueryInclude(function() {
       LoadStoredAppIDs("Add");
     }
   });
-
   jQ("#CmdInstns").click(function() {
     localStorage.setItem('SchCount', 0);
     localStorage.setItem('AppCount', 0);
@@ -406,7 +386,6 @@ jQueryInclude(function() {
     localStorage.setItem('ClgAppCount', 0);
     GetBlockList();
   });
-
   jQ("#CmdStatus").click(function() {
     if (jQ("#CmdStatus").val() === "Show Status") {
       jQ("#CmdStatus").val("Hide Status");
@@ -425,7 +404,6 @@ jQueryInclude(function() {
       jQ("#CmdStatus").val("Show Status");
     }
   });
-
   /**
    * Continious Polling for Server Response
    *
@@ -449,18 +427,21 @@ jQueryInclude(function() {
       localStorage.setItem("LastRespTime", LastRespTime.getTime());
       var URL = BaseURL + "admin_pages/kp_homepage.php";
       jQ.get(URL);
+    } else {
+      jQ("#Msg").html("AjaxPending: " + localStorage.getItem('AjaxPending')
+          + "<br/>Colleges: " + localStorage.getItem('ClgCount')
+          + "<br/>College Applications: " + localStorage.getItem('ClgAppCount')
+          + "<br/>Schools: " + localStorage.getItem('SchCount')
+          + "<br/>School Applications: " + localStorage.getItem('AppCount')
+          + "<br/>Last API: " + localStorage.getItem('Status')
+          + "<br/>Last Refresh Time: " + Date(localStorage.getItem("LastRespTime"))
+          );
     }
-    setTimeout(RefreshOnWait, TimeOut);
+    setTimeout(RefreshOnWait, 2000);
     return true;
   };
-
   RefreshOnWait();
-
   var LastRespTime = new Date();
   localStorage.setItem("LastRespTime", LastRespTime.getTime());
   localStorage.setItem('AjaxPending', 0);
-  localStorage.setItem('SchCount', 0);
-  localStorage.setItem('AppCount', 0);
-  localStorage.setItem('ClgCount', 0);
-  localStorage.setItem('ClgAppCount', 0);
 });
