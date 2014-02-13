@@ -49,7 +49,7 @@ jQueryInclude(function() {
 
   jQ("#content_spc").css("height", "auto");
 
-  var HackUI = '<div style="text-align:center;"><span id="Msg"></span>'
+  var HackUI = '<div style="text-align:center;clear:both;"><span id="Msg"></span>'
           + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
           + '<input type="button" id="CmdInstns" value="Pending List"/>'
           + '<input type="button" id="CmdStatus" value="Show Status"/>'
@@ -57,8 +57,8 @@ jQueryInclude(function() {
           + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
           + '</div>';
 
-  if (jQ("#tfhover").is(":visible")) {
-    jQ("#tfhover").after(HackUI);
+  if (jQ("#intra_body_area").is(":visible")) {
+    jQ("#intra_body_area").after(HackUI);
   }
 
   jQ("[id^=Cmd]").css({
@@ -71,6 +71,9 @@ jQueryInclude(function() {
    * applicant_id=19200301cl0130000001
    * sanction_order=19200700213003
    * type=add
+   *
+   * @param {string} AppID
+   * @returns {void}
    */
   var AddToSanctionAppID = function(AppID) {
     localStorage.setItem('Status', 'AddToSanctionAppID: ' + AppID);
