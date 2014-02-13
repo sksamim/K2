@@ -49,7 +49,7 @@ jQueryInclude(function() {
 
   jQ("#content_spc").css("height", "auto");
 
-  var HackUI = '<div style="text-align:center;">'
+  var HackUI = '<div style="text-align:center;"><span id="Msg"></span>'
           + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
           + '<input type="button" id="CmdSanction" value="Add To Sanction"/>'
           + '<input type="button" id="CmdInstns" value="Pending List"/>'
@@ -154,15 +154,18 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        var AppNo = '', AppName = '';
+        var AppNo = '', AppName = '', AppIndex = 0;
+
         jQ(data).find("table.tftable tr td:nth-child(2)")
                 .each(function(Index, Item) {
           AppNo = jQ(Item).text().substr(0, 20);
           AppName = jQ(Item).next().text();
           if (AppNo.length > 0) {
-            localStorage.setItem('AppNo_' + SchCode + '_' + Index + '_No', AppNo);
-            localStorage.setItem('AppNo_' + SchCode + '_'
-                    + Index + '_Name', AppName);
+            AppIndex = parseInt(localStorage.getItem('AppCount')) + 1;
+            localStorage.setItem('AppNo_' + AppIndex + '_No', AppNo);
+            localStorage.setItem('AppNo_' + AppIndex + '_Name', AppName);
+            localStorage.setItem('AppCount', AppIndex);
+            jQ("#Msg").text('AppCount: ' + AppIndex);
           }
         });
       }
@@ -190,11 +193,15 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        var SchCode = '';
+        var SchCode = '', InstIndex = 0;
+
         jQ(data).find("option").each(function(Index, Item) {
           SchCode = jQ(Item).val();
           if (SchCode.length > 0) {
-            localStorage.setItem('SchCode_' + BlockCode + '_' + Index, SchCode);
+            InstIndex = parseInt(localStorage.getItem('InstCount')) + 1;
+            localStorage.setItem('SchCode_' + InstIndex, SchCode);
+            localStorage.setItem('InstCount', InstIndex);
+            jQ("#Msg").text('InstCount: ' + InstIndex);
             GetSchAppList(SchCode);
           }
         });
@@ -215,6 +222,7 @@ jQueryInclude(function() {
    */
 
   var GetClgAppList = function(ClgCode) {
+    jQ("#Msg").text('GetClgAppList: ' + ClgCode);
     localStorage.setItem('Status', 'GetClgAppList: ' + ClgCode);
     jQ.ajax({
       type: 'GET',
@@ -352,6 +360,8 @@ jQueryInclude(function() {
   });
 
   jQ("#CmdInstns").click(function() {
+    localStorage.setItem('InstCount', 0);
+    localStorage.setItem('AppCount', 0);
     GetBlockList();
   });
 
