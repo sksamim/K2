@@ -435,9 +435,8 @@ jQueryInclude(function() {
 
       var LastRespTime = new Date();
       localStorage.setItem("LastRespTime", LastRespTime.getTime());
-      localStorage.setItem("TryLogin", "Yes");
       var URL = BaseURL + "admin_pages/kp_homepage.php";
-      parent.window.open(URL, "_self");
+      jQ.get(URL);
     }
     setTimeout(RefreshOnWait, TimeOut);
     return true;
