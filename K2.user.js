@@ -100,9 +100,9 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem('AddToSanction Error:' + AppID, e);
       }
-    }).fail(function(msg) {
+    }).fail(function(FailMsg) {
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
-      localStorage.setItem('AddToSanction Fail:' + AppID, msg);
+      localStorage.setItem('AddToSanction Fail:' + AppID, FailMsg.statusText);
     });
   };
 
@@ -130,8 +130,8 @@ jQueryInclude(function() {
         localStorage.setItem('SanctionAppID Error:' + AppID, e);
       }
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
-    }).fail(function(msg) {
-      localStorage.setItem('SanctionAppID Fail:' + AppID, msg);
+    }).fail(function(FailMsg) {
+      localStorage.setItem('SanctionAppID Fail:' + AppID, FailMsg.statusText);
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
@@ -183,8 +183,8 @@ jQueryInclude(function() {
         localStorage.setItem('GetSchAppList Error:', e);
       }
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
-    }).fail(function(msg) {
-      localStorage.setItem('GetSchAppList Fail:', msg.statusText);
+    }).fail(function(FailMsg) {
+      localStorage.setItem('GetSchAppList Fail:', FailMsg.statusText);
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
@@ -223,8 +223,8 @@ jQueryInclude(function() {
         localStorage.setItem('GetInstList Error:', e);
       }
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
-    }).fail(function(msg) {
-      localStorage.setItem('GetInstList Fail:', msg);
+    }).fail(function(FailMsg) {
+      localStorage.setItem('GetInstList Fail:', FailMsg.statusText);
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
@@ -270,8 +270,8 @@ jQueryInclude(function() {
         localStorage.setItem('GetClgAppList Error:', e);
       }
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
-    }).fail(function(msg) {
-      localStorage.setItem('GetClgAppList Fail:', msg);
+    }).fail(function(FailMsg) {
+      localStorage.setItem('GetClgAppList Fail:', FailMsg.statusText);
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
@@ -314,8 +314,8 @@ jQueryInclude(function() {
         localStorage.setItem('GetClgList Error:', e);
       }
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
-    }).fail(function(msg) {
-      localStorage.setItem('GetClgList Fail:', msg);
+    }).fail(function(FailMsg) {
+      localStorage.setItem('GetClgList Fail:', FailMsg.statusText);
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
@@ -347,8 +347,8 @@ jQueryInclude(function() {
         localStorage.setItem('GetBlockList Error:', e);
         localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
       }
-    }).fail(function(msg) {
-      localStorage.setItem('GetBlockList Fail:', msg);
+    }).fail(function(FailMsg) {
+      localStorage.setItem('GetBlockList Fail:', FailMsg.statusText);
       localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     });
   };
