@@ -371,11 +371,13 @@ jQueryInclude(function() {
     localStorage.setItem("LastRespTime", LastRespTime.getTime());
   });
   jQ("#CmdSanction").click(function() {
+    localStorage.setItem('SanctionOrderNo', jQ("#AppIDs").val());
     var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
     if (SanctionOrderNo === null) {
       jQ("#Msg").text('Please provide Sanction Order No.');
     } else if (SanctionOrderNo.length > 0) {
       jQ("#Msg").text('Sanction Order No.: ' + SanctionOrderNo);
+      jQ("#AppIDs").val('');
       LoadStoredAppIDs("Add");
     }
   });
