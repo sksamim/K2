@@ -47,13 +47,16 @@ jQueryInclude(function() {
     return jQ(this).val() + " - " + jQ(this).html();
   });
   jQ("#content_spc").css("height", "auto");
-  var HackUI = '<div style="text-align:center;clear:both;"><span id="Msg"></span>'
+  var HackUI = '<div style="text-align:center;clear:both;">'
+      + '<span style="text-align:right;" id="Msg"></span>'
       + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
-      + '<input type="button" id="CmdInstns" value="Pending List"/>'
+      + '<input type="button" id="CmdListInst" value="Get Institutions"/>'
+      + '<input type="button" id="CmdAllAppNos" value="Pending Applications"/>'
       + '<input type="button" id="CmdStatus" value="Show Status"/>'
       + '<input type="button" id="CmdSanction" value="Add To Sanction"/>'
       + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
       + '</div>';
+
   if (jQ("#intra_body_area").is(":visible")) {
     jQ("#intra_body_area").after(HackUI);
   }
@@ -62,6 +65,16 @@ jQueryInclude(function() {
     "margin": "10px",
     "padding": "5px"
   });
+
+  var AjaxPending = function(AjaxState) {
+    var StartAjax = parseInt(localStorage.getItem('AjaxPending'));
+    if (AjaxState === "Start") {
+      localStorage.setItem('AjaxPending', StartAjax + 1);
+    } else {
+      localStorage.setItem('AjaxPending', StartAjax - 1);
+    }
+  };
+
   /**
    * admin_pages/kp_sanction_order_generation_insert.php?
    * applicant_id=19200301cl0130000001
@@ -74,7 +87,7 @@ jQueryInclude(function() {
   var AddToSanctionAppID = function(AppID) {
     localStorage.setItem('Status', 'AddToSanctionAppID: ' + AppID);
     var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
-    localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
+    AjaxPending("Start");
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_sanction_order_generation_insert.php',
@@ -88,7 +101,6 @@ jQueryInclude(function() {
         'type': 'add'
       }
     }).done(function(data) {
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
       try {
         var SanctionStatus = jQ(data).find("div.sanction_block").next().text();
         localStorage.setItem('AddToSanction:' + AppID, SanctionStatus);
@@ -97,13 +109,21 @@ jQueryInclude(function() {
         localStorage.setItem('AddToSanction Error:' + AppID, e);
       }
     }).fail(function(FailMsg) {
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
       localStorage.setItem('AddToSanction Fail:' + AppID, FailMsg.statusText);
+    }).always(function() {
+      AjaxPending("Stop");
     });
   };
+
+  /**
+   * Approve Applications for Sanctioning
+   *
+   * @param {type} AppID
+   * @returns {undefined}
+   */
   var SanctionAppID = function(AppID) {
     localStorage.setItem('Status', 'SanctionAppID: ' + AppID);
-    localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
+    AjaxPending("Start");
     jQ.ajax({
       type: 'POST',
       url: BaseURL + 'admin_pages/kp_fwd_post.php',
@@ -124,12 +144,13 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem('SanctionAppID Error:' + AppID, e);
       }
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     }).fail(function(FailMsg) {
       localStorage.setItem('SanctionAppID Fail:' + AppID, FailMsg.statusText);
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
+    }).always(function() {
+      AjaxPending("Stop");
     });
   };
+
   /**
    * kp_block_verify_applicant_list.php?
    * schcd=19202103702&
@@ -140,13 +161,16 @@ jQueryInclude(function() {
    * @param {type} ClgCode
    * @returns {undefined}
    */
-
-  var GetSchAppList = function(SchCode) {
+  var GetSchAppList = function(SchCode, Scheme) {
     localStorage.setItem('Status', 'GetSchAppList: ' + SchCode);
-    localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
+    if (Scheme === "K2") {
+      Scheme = "_list_one.php";
+    } else {
+      Scheme = "_list.php";
+    }
     jQ.ajax({
       type: 'GET',
-      url: BaseURL + 'admin_pages/kp_block_verify_applicant_list.php',
+      url: BaseURL + 'admin_pages/kp_block_verify_applicant' + Scheme,
       dataType: 'html',
       xhrFields: {
         withCredentials: true
@@ -174,15 +198,21 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem('GetSchAppList Error:', e);
       }
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     }).fail(function(FailMsg) {
       localStorage.setItem('GetSchAppList Fail:', FailMsg.statusText);
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
+    }).always(function() {
+      AjaxPending("Stop");
     });
   };
+
+  /**
+   *
+   * @param {type} BlockCode
+   * @returns {undefined}
+   */
   var GetSchList = function(BlockCode) {
     localStorage.setItem('Status', 'GetInstList: ' + BlockCode);
-    localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
+    AjaxPending("Start");
     jQ.ajax({
       type: 'POST',
       url: BaseURL + 'admin_pages/ajax/find_school_for_block.php',
@@ -204,29 +234,28 @@ jQueryInclude(function() {
             SchIndex = parseInt(localStorage.getItem('SchCount')) + 1;
             localStorage.setItem('SchCode_' + SchIndex, SchCode);
             localStorage.setItem('SchCount', SchIndex);
-            GetSchAppList(SchCode);
           }
         });
       }
       catch (e) {
         localStorage.setItem('GetInstList Error:', e);
       }
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     }).fail(function(FailMsg) {
       localStorage.setItem('GetInstList Fail:', FailMsg.statusText);
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
+    }).always(function() {
+      AjaxPending("Stop");
     });
   };
+
   /**
    * kp_verify_applicant_list_clg.php?status=10042&schcd=19200301cl
    *
    * @param {type} BlockCode
    * @returns {undefined}
    */
-
   var GetClgAppList = function(ClgCode) {
     localStorage.setItem('Status', 'GetClgAppList: ' + ClgCode);
-    localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
+    AjaxPending("Start");
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_verify_applicant_list_clg.php',
@@ -256,22 +285,22 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem('GetClgAppList Error:', e);
       }
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     }).fail(function(FailMsg) {
       localStorage.setItem('GetClgAppList Fail:', FailMsg.statusText);
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
+    }).always(function() {
+      AjaxPending("Stop");
     });
   };
+
   /**
    * admin_pages/kp_block_verify_list_clg.php?block_code=192003
    *
    * @param {type} BlockCode
    * @returns {undefined}
    */
-
   var GetClgList = function(BlockCode) {
     localStorage.setItem('Status', 'GetClgList: ' + BlockCode);
-    localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
+    AjaxPending("Start");
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_block_verify_list_clg.php',
@@ -287,10 +316,11 @@ jQueryInclude(function() {
         var ClgCode = '', Status = 0, ClgIndex = 0;
         jQ(data).find("table.tftable a").each(function(Index, Item) {
           ClgCode = jQ(Item).attr("onclick").substr(13, 10);
+          ClgName = jQ(Item).find("table.tftable tr td:nth-child(2)").text();
           Status = jQ(Item).attr("onclick").indexOf('10042');
           if ((ClgCode.length > 0) && (Status > 0)) {
             ClgIndex = parseInt(localStorage.getItem('ClgCount')) + 1;
-            localStorage.setItem('ClgCode_' + ClgIndex, ClgCode);
+            localStorage.setItem('ClgCode_' + ClgCode, ClgName);
             localStorage.setItem('ClgCount', ClgIndex);
             GetClgAppList(ClgCode);
           }
@@ -299,15 +329,21 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem('GetClgList Error:', e);
       }
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
     }).fail(function(FailMsg) {
       localStorage.setItem('GetClgList Fail:', FailMsg.statusText);
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
+    }).always(function() {
+      AjaxPending("Stop");
     });
   };
+
+  /**
+   * Get a List of All Institutions
+   *
+   * @returns {undefined}
+   */
   var GetBlockList = function() {
     localStorage.setItem('Status', 'Request Blocks');
-    localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) + 1);
+    AjaxPending("Start");
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_dpmu_verify_block_list.php',
@@ -322,7 +358,7 @@ jQueryInclude(function() {
           BlockCode = jQ(Item).val();
           if (BlockCode.length > 0) {
             localStorage.setItem('BlockCode_' + Index, BlockCode);
-            GetSchList(BlockCode);
+            //GetSchList(BlockCode);
             GetClgList(BlockCode);
           }
         });
@@ -330,13 +366,36 @@ jQueryInclude(function() {
       }
       catch (e) {
         localStorage.setItem('GetBlockList Error:', e);
-        localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
       }
     }).fail(function(FailMsg) {
       localStorage.setItem('GetBlockList Fail:', FailMsg.statusText);
-      localStorage.setItem('AjaxPending', parseInt(localStorage.getItem('AjaxPending')) - 1);
+    }).always(function() {
+      AjaxPending("Stop");
     });
   };
+
+  /**
+   * Load all stored data from localStorage
+   * Using the matching pair like Start_Key_End:Value
+   * @param {type} Prefix
+   * @returns {Array}
+   */
+  var LoadData = function(Prefix) {
+    localStorage.setItem('Status', 'Load: ' + Prefix + '*');
+    var Status = [], AppIDs = [];
+    jQ.each(localStorage, function(Key, Value) {
+      if (Key.search(Prefix) >= 0) {
+        var StoredKey = Value.substr(Prefix.length, Key.length - Prefix.length);
+        AppIDs.push(StoredKey);
+        Status.push(StoredKey + " => " + Value);
+      }
+    });
+    if (jQ("#AppIDs").val().length === 0) {
+      jQ("#AppIDs").val(AppIDs.join(","));
+    }
+    return Status;
+  };
+
   var LoadStoredAppIDs = function(ToDo) {
     localStorage.setItem('Status', 'Load AppIDs: ' + ToDo);
     var Status = [], AppIDs = [];
@@ -360,6 +419,10 @@ jQueryInclude(function() {
     }
     return Status;
   };
+
+  /**
+   * Clears all the contents of localStorage
+   */
   jQ("#CmdClearStorage").click(function() {
     localStorage.clear();
     localStorage.setItem('AjaxPending', 0);
@@ -367,9 +430,11 @@ jQueryInclude(function() {
     localStorage.setItem('ClgAppCount', 0);
     localStorage.setItem('ClgCount', 0);
     localStorage.setItem('SchCount', 0);
-    var LastRespTime = new Date();
-    localStorage.setItem("LastRespTime", LastRespTime.getTime());
   });
+
+  /**
+   * Adds all the applicants to Sanction Order
+   */
   jQ("#CmdSanction").click(function() {
     localStorage.setItem('SanctionOrderNo', jQ("#AppIDs").val());
     var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
@@ -378,16 +443,25 @@ jQueryInclude(function() {
     } else if (SanctionOrderNo.length > 0) {
       jQ("#Msg").text('Sanction Order No.: ' + SanctionOrderNo);
       jQ("#AppIDs").val('');
+      LoadStoredAppIDs("Sanction");
       LoadStoredAppIDs("Add");
     }
   });
-  jQ("#CmdInstns").click(function() {
+
+  /**
+   * Gets the list of all Institutions and stores in localStorage
+   */
+  jQ("#CmdListInst").click(function() {
     localStorage.setItem('SchCount', 0);
     localStorage.setItem('AppCount', 0);
     localStorage.setItem('ClgCount', 0);
     localStorage.setItem('ClgAppCount', 0);
     GetBlockList();
   });
+
+  /**
+   * Loads the contents of localStorage into the interface
+   */
   jQ("#CmdStatus").click(function() {
     if (jQ("#CmdStatus").val() === "Show Status") {
       jQ("#CmdStatus").val("Hide Status");
@@ -400,12 +474,12 @@ jQueryInclude(function() {
           + "</li></ol>");
       jQ("#AppStatus li").css("list-style-type", "decimal-leading-zero");
     } else {
-
       jQ("#AppStatus").remove();
       jQ("#AppIDs").show();
       jQ("#CmdStatus").val("Show Status");
     }
   });
+
   /**
    * Continious Polling for Server Response
    *
@@ -424,9 +498,6 @@ jQueryInclude(function() {
     }
 
     if (CurrentTime > TimeOut) {
-
-      var LastRespTime = new Date();
-      localStorage.setItem("LastRespTime", LastRespTime.getTime());
       var URL = BaseURL + "admin_pages/kp_homepage.php";
       jQ.get(URL);
     } else {
@@ -435,15 +506,12 @@ jQueryInclude(function() {
           + "<br/>College Applications: " + localStorage.getItem('ClgAppCount')
           + "<br/>Schools: " + localStorage.getItem('SchCount')
           + "<br/>School Applications: " + localStorage.getItem('AppCount')
-          + "<br/>Last API: " + localStorage.getItem('Status')
-          + "<br/>Last Refresh Time: " + Date(localStorage.getItem("LastRespTime"))
-          );
+          + "<br/>Last API: " + localStorage.getItem('Status'));
     }
-    setTimeout(RefreshOnWait, 2000);
+    setTimeout(RefreshOnWait, 5000);
     return true;
   };
   RefreshOnWait();
   var LastRespTime = new Date();
   localStorage.setItem("LastRespTime", LastRespTime.getTime());
-  localStorage.setItem('AjaxPending', 0);
 });
