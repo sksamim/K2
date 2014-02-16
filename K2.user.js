@@ -49,15 +49,27 @@ jQueryInclude(function() {
   jQ("#content_spc").css("height", "auto");
   var HackUI = '<div style="text-align:center;clear:both;">'
       + '<div style="text-align:right;" id="Msg"></div>'
-      + '<textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
-      + '<input type="button" id="CmdListInst" value="Get Institutions"/>'
-      + '<input type="button" id="CmdAllAppNos" value="Pending Applications"/>'
-      + '<input type="button" id="CmdStatus" value="Show Status"/>'
-      + '<input type="button" id="CmdSanction" value="Add To Sanction"/>'
-      + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
+      + '<textarea id="AllIDs" rows="20" cols="60"></textarea><br/>'
+      + '<input type="button" id="CmdGo" value="Do at Own Risk"/>'
+      + '<input type="button" id="CmdStatus" value="Show All"/>'
+      + '<input type="button" id="CmdClear" value="Delete"/>'
+      + '<input type="button" id="CmdClearStorage" value="Delete All"/>'
       + '</div>';
+
+  var ActionList = '<label for="">Go For: </label>'
+      + '<select id="OptAction" >'
+      + '<option value="BlockList">1. Block List</option>'
+      + '<option value="ClgList">2. College List</option>'
+      + '<option value="SchList">3. School List</option>'
+      + '<option value="ClgAppList">4. College Applicants</option>'
+      + '<option value="SchAppList">5. School Applicants</option>'
+      + '<option value="SchK2AppList">6. School K2 Applicants</option>'
+      + '<option value="Sanction">7. Add To Sanction Order</option>'
+      + '</select>';
+
   if (jQ("#intra_body_area").is(":visible")) {
     jQ("#intra_body_area").after(HackUI);
+    jQ("#CmdGo").before(ActionList);
   }
 
   jQ("[id^=Cmd]").css({
@@ -73,6 +85,44 @@ jQueryInclude(function() {
     "margin": "10px",
     "float": "left"
   });
+
+  /**
+   * Limits No of AjaxCalls at a time
+   *
+   * @param {type} Fn
+   * @param {type} Arg
+   * @returns {Boolean}
+   */
+  var AjaxFunnel = function(Fn, Arg1, Arg2) {
+    var NextCallTimeOut = 2500;
+    var PendingAjax = parseInt(localStorage.getItem('AjaxPending'));
+    var AjaxLimit = parseInt(localStorage.getItem('AjaxLimit'));
+    if (AjaxLimit === null) {
+      AjaxLimit = 5;
+    }
+    if (PendingAjax > AjaxLimit) {
+      if (typeof Arg1 === "undefined") {
+        setTimeout(AjaxFunnel(Fn), NextCallTimeOut);
+      } else if (typeof Arg2 === "undefined") {
+        setTimeout(AjaxFunnel(Fn, Arg1), NextCallTimeOut);
+      } else {
+        setTimeout(AjaxFunnel(Fn, Arg1, Arg2), NextCallTimeOut);
+      }
+      return false;
+    } else {
+      if (typeof Arg1 === "undefined") {
+        AjaxPending("Start");
+        return Fn();
+      } else if (typeof Arg2 === "undefined") {
+        AjaxPending("Start");
+        return Fn(Arg1);
+      } else {
+        AjaxPending("Start");
+        return Fn(Arg1, Arg2);
+      }
+      return true;
+    }
+  };
 
   /**
    * Records the No of Ajax Calls
@@ -101,7 +151,6 @@ jQueryInclude(function() {
   var AddToSanctionAppID = function(AppID) {
     localStorage.setItem('Status', 'AddToSanctionAppID: ' + AppID);
     var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
-    AjaxPending("Start");
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_sanction_order_generation_insert.php',
@@ -137,7 +186,7 @@ jQueryInclude(function() {
    */
   var SanctionAppID = function(AppID) {
     localStorage.setItem('Status', 'SanctionAppID: ' + AppID);
-    AjaxPending("Start");
+    var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
       type: 'POST',
       url: BaseURL + 'admin_pages/kp_fwd_post.php',
@@ -153,13 +202,14 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        localStorage.setItem('SanctionAppID:' + AppID, data);
+        localStorage.setItem(KeyPrefix + ':' + AppID, data);
+        setTimeout(AjaxFunnel(AddToSanctionAppID, AppID), 1000);
       }
       catch (e) {
-        localStorage.setItem('SanctionAppID Error:' + AppID, e);
+        localStorage.setItem(KeyPrefix + ' Error:' + AppID, e);
       }
     }).fail(function(FailMsg) {
-      localStorage.setItem('SanctionAppID Fail:' + AppID, FailMsg.statusText);
+      localStorage.setItem(KeyPrefix + ' Fail:' + AppID, FailMsg.statusText);
     }).always(function() {
       AjaxPending("Stop");
     });
@@ -177,6 +227,7 @@ jQueryInclude(function() {
    */
   var GetSchAppList = function(SchCode, Scheme) {
     localStorage.setItem('Status', 'GetSchAppList: ' + SchCode);
+    var KeyPrefix = localStorage.getItem('KeyPrefix');
     if (Scheme === "K2") {
       Scheme = "_list_one.php";
     } else {
@@ -196,24 +247,25 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        var AppNo = '', AppName = '', AppIndex = 0;
+        var AppNo = '', AppName = '', AppIndex = 0, Finalised = '';
         jQ(data).find("table.tftable tr td:nth-child(2)")
             .each(function(Index, Item) {
           AppNo = jQ(Item).text().substr(0, 20);
           AppName = jQ(Item).next().text();
-          if (AppNo.length > 0) {
-            AppIndex = parseInt(localStorage.getItem('SchAppCount')) + 1;
-            localStorage.setItem('AppNo_' + AppIndex + '_No', AppNo);
-            localStorage.setItem('AppNo_' + AppIndex + '_Name', AppName);
-            localStorage.setItem('SchAppCount', AppIndex);
+          Finalised = jQ(Item).next().next().text();
+          Finalised = "Is " + Finalised;
+          if (Finalised.indexOf("FINALIZED") < 0) {
+            AppIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
+            localStorage.setItem(KeyPrefix + AppNo, AppName);
+            localStorage.setItem(KeyPrefix + 'Count', AppIndex);
           }
         });
       }
       catch (e) {
-        localStorage.setItem('GetSchAppList Error:', e);
+        localStorage.setItem(KeyPrefix + ' Error:', e);
       }
     }).fail(function(FailMsg) {
-      localStorage.setItem('GetSchAppList Fail:', FailMsg.statusText);
+      localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
     }).always(function() {
       AjaxPending("Stop");
     });
@@ -226,7 +278,7 @@ jQueryInclude(function() {
    */
   var GetSchList = function(BlockCode) {
     localStorage.setItem('Status', 'GetSchList: ' + BlockCode);
-    AjaxPending("Start");
+    var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
       type: 'POST',
       url: BaseURL + 'admin_pages/ajax/find_school_for_block.php',
@@ -246,17 +298,17 @@ jQueryInclude(function() {
           SchCode = jQ(Item).val();
           SchName = jQ(Item).text();
           if (SchCode.length > 0) {
-            SchIndex = parseInt(localStorage.getItem('SchCount')) + 1;
-            localStorage.setItem('SchCode_' + SchCode, SchName);
-            localStorage.setItem('SchCount', SchIndex);
+            SchIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
+            localStorage.setItem(KeyPrefix + SchCode, SchName);
+            localStorage.setItem(KeyPrefix + 'Count', SchIndex);
           }
         });
       }
       catch (e) {
-        localStorage.setItem('GetInstList Error:', e);
+        localStorage.setItem(KeyPrefix + ' Error:', e);
       }
     }).fail(function(FailMsg) {
-      localStorage.setItem('GetInstList Fail:', FailMsg.statusText);
+      localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
     }).always(function() {
       AjaxPending("Stop");
     });
@@ -270,7 +322,7 @@ jQueryInclude(function() {
    */
   var GetClgAppList = function(ClgCode) {
     localStorage.setItem('Status', 'GetClgAppList: ' + ClgCode);
-    AjaxPending("Start");
+    var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_verify_applicant_list_clg.php',
@@ -289,19 +341,20 @@ jQueryInclude(function() {
             .each(function(Index, Item) {
           AppNo = jQ(Item).text();
           AppName = jQ(Item).next().text();
-          if (AppNo.length > 0) {
-            AppCount = parseInt(localStorage.getItem('ClgAppCount')) + 1;
-            localStorage.setItem('AppNo_' + AppCount + '_No', AppNo);
-            localStorage.setItem('AppNo_' + AppCount + '_Name', AppName);
-            localStorage.setItem('ClgAppCount', AppCount);
+          var Finalised = jQ(Item).next().next().text();
+          Finalised = "Is " + Finalised;
+          if (Finalised.indexOf("FINALIZED") < 0) {
+            AppCount = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
+            localStorage.setItem(KeyPrefix + AppNo, AppName);
+            localStorage.setItem(KeyPrefix + 'Count', AppCount);
           }
         });
       }
       catch (e) {
-        localStorage.setItem('GetClgAppList Error:', e);
+        localStorage.setItem(KeyPrefix + ' Error:', e);
       }
     }).fail(function(FailMsg) {
-      localStorage.setItem('GetClgAppList Fail:', FailMsg.statusText);
+      localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
     }).always(function() {
       AjaxPending("Stop");
     });
@@ -315,7 +368,7 @@ jQueryInclude(function() {
    */
   var GetClgList = function(BlockCode) {
     localStorage.setItem('Status', 'GetClgList: ' + BlockCode);
-    AjaxPending("Start");
+    var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_block_verify_list_clg.php',
@@ -334,20 +387,19 @@ jQueryInclude(function() {
             ClgCode = jQ(Item).find("a").attr("onclick").substr(13, 10);
             Status = jQ(Item).find("a").attr("onclick").indexOf('10042');
             if ((ClgCode.length > 0) && (Status > 0)) {
-              ClgIndex = parseInt(localStorage.getItem('ClgCount')) + 1;
+              ClgIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
               ClgName = jQ(Item).find("td:nth-child(2)").text();
-              localStorage.setItem('ClgCode_' + ClgCode, ClgName);
-              localStorage.setItem('ClgCount', ClgIndex);
-              //GetClgAppList(ClgCode);
+              localStorage.setItem(KeyPrefix + ClgCode, ClgName);
+              localStorage.setItem(KeyPrefix + 'Count', ClgIndex);
             }
           }
         });
       }
       catch (e) {
-        localStorage.setItem('GetClgList Error:', e);
+        localStorage.setItem(KeyPrefix + ' Error:', e);
       }
     }).fail(function(FailMsg) {
-      localStorage.setItem('GetClgList Fail:', FailMsg.statusText);
+      localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
     }).always(function() {
       AjaxPending("Stop");
     });
@@ -360,7 +412,7 @@ jQueryInclude(function() {
    */
   var GetBlockList = function() {
     localStorage.setItem('Status', 'Request Blocks');
-    AjaxPending("Start");
+    var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_dpmu_verify_block_list.php',
@@ -371,25 +423,22 @@ jQueryInclude(function() {
     }).done(function(data) {
       try {
         var BlockCode = '', BlkIndex = 0;
-        ;
         jQ(data).find("#block_select option").each(function(Index, Item) {
           BlockCode = jQ(Item).val();
           BlockName = jQ(Item).text();
           if (BlockCode.length > 0) {
-            BlkIndex = parseInt(localStorage.getItem('BlkCount')) + 1;
-            localStorage.setItem('BlkCode_' + BlockCode, BlockName);
-            localStorage.setItem('BlkCount', BlkIndex);
-            GetSchList(BlockCode);
-            GetClgList(BlockCode);
+            BlkIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
+            localStorage.setItem(KeyPrefix + BlockCode, BlockName);
+            localStorage.setItem(KeyPrefix + 'Count', BlkIndex);
           }
         });
         localStorage.setItem('Status', 'Success');
       }
       catch (e) {
-        localStorage.setItem('GetBlockList Error:', e);
+        localStorage.setItem(KeyPrefix + ' Error:', e);
       }
     }).fail(function(FailMsg) {
-      localStorage.setItem('GetBlockList Fail:', FailMsg.statusText);
+      localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
     }).always(function() {
       AjaxPending("Stop");
     });
@@ -403,95 +452,155 @@ jQueryInclude(function() {
    */
   var LoadData = function(Prefix) {
     localStorage.setItem('Status', 'Load: ' + Prefix + '*');
-    var Status = [], AppIDs = [];
+    var Status = [], AllIDs = [];
     jQ.each(localStorage, function(Key, Value) {
       if (Key.search(Prefix) >= 0) {
         var StoredKey = Key.substr(Prefix.length, Key.length - Prefix.length);
-        AppIDs.push(StoredKey);
+        AllIDs.push(StoredKey);
         Status.push(StoredKey + " => " + Value);
       }
     });
-    if (jQ("#AppIDs").val().length === 0) {
-      jQ("#AppIDs").val(AppIDs.join(","));
+    if (jQ("#AllIDs").val().length === 0) {
+      jQ("#AllIDs").val(AllIDs.join(","));
     }
     return Status;
   };
 
-  var LoadStoredAppIDs = function(ToDo) {
-    localStorage.setItem('Status', 'Load AppIDs: ' + ToDo);
-    var Status = [], AppIDs = [];
-    jQ.each(localStorage, function(Key, Value) {
-      if (Key.search("AppNo") >= 0) {
-        if (Key.search("_No") > 0) {
-          AppIDs.push(Value);
-          if (ToDo === "Sanction") {
-            SanctionAppID(Value);
-          } else if (ToDo === "Add") {
-            AddToSanctionAppID(Value);
+  /**
+   * Initiates the Selected Action to be performed
+   *
+   * @param {type} ForStep
+   * @returns {undefined}
+   */
+  var GoForAction = function(ForStep) {
+
+    var AllIDs = jQ("#AllIDs").val().split(",");
+    var Gap = 250;
+
+    switch (jQ("#OptAction").val()) {
+      case "BlockList":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'BlkCode_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          setTimeout(AjaxFunnel(GetBlockList), Gap);
+        }
+        break;
+
+      case "ClgList":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'ClgCode_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function(Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetClgList, Value), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "SchList":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchCode_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function(Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetSchList, Value), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "ClgAppList":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'ClgAppNo_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function(Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetClgAppList, Value), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "SchAppList":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchAppNo_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function(Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetSchAppList, Value, 'K1'), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "SchK2AppList":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchK2AppNo_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function(Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetSchAppList, Value, 'K2'), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "Sanction":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'Sanction');
+
+          localStorage.setItem('SanctionOrderNo', jQ("#AllIDs").val());
+          var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
+          if (SanctionOrderNo === null) {
+            jQ("#Msg").after('Please provide Sanction Order No.');
+            jQ("#AllIDs").val('');
+          } else if (SanctionOrderNo.length > 0) {
+            jQ("#Msg").after('Sanction Order No.: ' + SanctionOrderNo);
           }
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function(Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(SanctionAppID, Value), Gap * Index);
+            }
+          });
         }
-        if (Key.search("_Name") > 0) {
-          Status.push(Value);
-        }
-      }
-    });
-    if (jQ("#AppIDs").val().length === 0) {
-      jQ("#AppIDs").val(AppIDs.join(","));
+        break;
     }
-    return Status;
   };
 
   /**
-   * Clears all the contents of localStorage
+   * Prepare for Selected Action
    */
-  jQ("#CmdClearStorage").click(function() {
-    localStorage.clear();
-    localStorage.setItem('AjaxPending', 0);
-    localStorage.setItem('SchAppCount', 0);
-    localStorage.setItem('SchK2AppCount', 0);
-    localStorage.setItem('ClgAppCount', 0);
-    localStorage.setItem('ClgCount', 0);
-    localStorage.setItem('SchCount', 0);
-    localStorage.setItem('BlkCount', 0);
-    localStorage.setItem('KeyPrefix', 'ClgCode_');
+  jQ("#OptAction").change(function() {
+    GoForAction("Prepare");
   });
 
   /**
-   * Adds all the applicants to Sanction Order
+   * Perform the Selected Action
    */
-  jQ("#CmdSanction").click(function() {
-    localStorage.setItem('SanctionOrderNo', jQ("#AppIDs").val());
-    var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
-    if (SanctionOrderNo === null) {
-      jQ("#Msg").text('Please provide Sanction Order No.');
-    } else if (SanctionOrderNo.length > 0) {
-      jQ("#Msg").text('Sanction Order No.: ' + SanctionOrderNo);
-      jQ("#AppIDs").val('');
-      LoadStoredAppIDs("Sanction");
-      LoadStoredAppIDs("Add");
-    }
-  });
-
-  /**
-   * Gets the list of all Institutions and stores in localStorage
-   */
-  jQ("#CmdListInst").click(function() {
-    localStorage.setItem('SchCount', 0);
-    localStorage.setItem('ClgCount', 0);
-    GetBlockList();
+  jQ("#CmdGo").click(function() {
+    GoForAction("Perform");
   });
 
   /**
    * Loads the contents of localStorage into the interface
    */
   jQ("#CmdStatus").click(function() {
-    if (jQ("#CmdStatus").val() === "Show Status") {
-      jQ("#CmdStatus").val("Hide Status");
-      jQ("#AppIDs").hide();
+    if (jQ("#CmdStatus").val() === "Show All") {
+      jQ("#CmdStatus").val("Load All");
+      jQ("#AllIDs").hide();
       var vals = LoadData(localStorage.getItem('KeyPrefix'));
       var StatusDiv = document.createElement("div");
       StatusDiv.setAttribute("id", "AppStatus");
-      jQ("#AppIDs").parent().append(StatusDiv);
+      jQ("#AllIDs").parent().append(StatusDiv);
 
       jQ("#AppStatus")
           .html("<ol><li>" + vals.join("</li><li>") + "</li></ol>")
@@ -500,60 +609,89 @@ jQueryInclude(function() {
       jQ("#AppStatus li").css("list-style-type", "decimal-leading-zero");
     } else {
       jQ("#AppStatus").remove();
-      jQ("#AppIDs").show();
-      jQ("#CmdStatus").val("Show Status");
+      jQ("#AllIDs").show();
+      jQ("#CmdStatus").val("Show All");
     }
   });
 
   /**
-   * Continious Polling for Server Response
+   * Clear Individual Contents of localStorage
+   */
+  jQ("#CmdClear").click(function() {
+    var Prefix = localStorage.getItem('KeyPrefix');
+    jQ.each(localStorage, function(Key) {
+      if (Key.search(Prefix) >= 0) {
+        localStorage.removeItem(Key);
+      }
+    });
+    localStorage.setItem(Prefix + 'Count', 0);
+  });
+
+  /**
+   * Clears all the contents of localStorage
+   */
+  jQ("#CmdClearStorage").click(function() {
+    localStorage.clear();
+    localStorage.setItem('AjaxPending', 0);
+    localStorage.setItem('BlkCode_Count', 0);
+    localStorage.setItem('ClgCode_Count', 0);
+    localStorage.setItem('SchCode_Count', 0);
+    localStorage.setItem('ClgAppNo_Count', 0);
+    localStorage.setItem('SchAppNo_Count', 0);
+    localStorage.setItem('SchK2AppNo_Count', 0);
+    localStorage.setItem('SanctionCount', 0);
+    jQ("#OptAction").trigger("change");
+  });
+
+  /**
+   * Continious Polling for Server Response to avoid Session TimeOut
    *
    * @returns {Boolean}
    */
   var RefreshOnWait = function() {
-    var RespDate = new Date(), TimeOut;
-    var CurrentTime = RespDate.getTime();
-    CurrentTime = CurrentTime - localStorage.getItem("LastRespTime");
+    var CurrDate = new Date(), TimeOut;
+    var LastRespTime = new Date(localStorage.getItem("LastRespTime"));
+    var ElapsedTime = CurrDate.getTime() - LastRespTime.getTime();
     TimeOut = localStorage.getItem("RefreshTimeOut");
     if (TimeOut === null) {
       TimeOut = 300000;
     } else {
       TimeOut = 5000 + 60000 * TimeOut; // 5sec is minimum
-      localStorage.removeItem("RefreshTimeOut");
     }
 
-    if (CurrentTime > TimeOut) {
+    if (ElapsedTime > TimeOut) {
+      localStorage.setItem("LastRespTime", Date());
       var URL = BaseURL + "admin_pages/kp_homepage.php";
       jQ.get(URL);
     } else {
       jQ("#Msg").html('AjaxPending :<span>'
           + localStorage.getItem('AjaxPending')
           + '</span><br/>Blocks :<span>'
-          + localStorage.getItem('BlkCount')
+          + localStorage.getItem('BlkCode_Count')
           + '</span><br/>Colleges :<span>'
-          + localStorage.getItem('ClgCount')
-          + '</span><br/>College Applications:<span>'
-          + localStorage.getItem('ClgAppCount')
+          + localStorage.getItem('ClgCode_Count')
+          + '</span><br/>College Applications :<span>'
+          + localStorage.getItem('ClgAppNo_Count')
           + '</span><br/>Schools :<span>'
-          + localStorage.getItem('SchCount')
+          + localStorage.getItem('SchCode_Count')
           + '</span><br/>School Applications :<span>'
-          + localStorage.getItem('SchAppCount')
+          + localStorage.getItem('SchAppNo_Count')
           + '</span><br/>School K2 Applications :<span>'
-          + localStorage.getItem('SchK2AppCount')
-          + '</span><br/>Last API : ' + localStorage.getItem('Status'));
+          + localStorage.getItem('SchK2AppNo_Count')
+          + '</span><br/>Last API : '
+          + localStorage.getItem('Status')
+          + '<br/><br/>' + localStorage.getItem('LastRespTime'));
 
       jQ("#Msg span").css({
         "width": "80px",
         "display": "inline-block"
       });
     }
-    setTimeout(RefreshOnWait, 5000);
+    setTimeout(RefreshOnWait, 2000);
     return true;
   };
+
   RefreshOnWait();
-  var LastRespTime = new Date();
-  localStorage.setItem("LastRespTime", LastRespTime.getTime());
-  if (localStorage.getItem('KeyPrefix') === null) {
-    localStorage.setItem('KeyPrefix', 'BlkCode_');
-  }
+
+  localStorage.setItem("LastRespTime", Date());
 });
