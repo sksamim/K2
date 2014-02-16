@@ -48,7 +48,7 @@ jQueryInclude(function() {
   });
   jQ("#content_spc").css("height", "auto");
   var HackUI = '<div style="text-align:center;clear:both;">'
-      + '<span style="text-align:right;" id="Msg"></span>'
+      + '<div style="text-align:right;" id="Msg"></div>'
       + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
       + '<input type="button" id="CmdListInst" value="Get Institutions"/>'
       + '<input type="button" id="CmdAllAppNos" value="Pending Applications"/>'
@@ -188,10 +188,10 @@ jQueryInclude(function() {
           AppNo = jQ(Item).text().substr(0, 20);
           AppName = jQ(Item).next().text();
           if (AppNo.length > 0) {
-            AppIndex = parseInt(localStorage.getItem('AppCount')) + 1;
+            AppIndex = parseInt(localStorage.getItem('SchAppCount')) + 1;
             localStorage.setItem('AppNo_' + AppIndex + '_No', AppNo);
             localStorage.setItem('AppNo_' + AppIndex + '_Name', AppName);
-            localStorage.setItem('AppCount', AppIndex);
+            localStorage.setItem('SchAppCount', AppIndex);
           }
         });
       }
@@ -211,7 +211,7 @@ jQueryInclude(function() {
    * @returns {undefined}
    */
   var GetSchList = function(BlockCode) {
-    localStorage.setItem('Status', 'GetInstList: ' + BlockCode);
+    localStorage.setItem('Status', 'GetSchList: ' + BlockCode);
     AjaxPending("Start");
     jQ.ajax({
       type: 'POST',
@@ -227,12 +227,13 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        var SchCode = '', SchIndex = 0;
+        var SchCode = '', SchName = '', SchIndex = 0;
         jQ(data).find("option").each(function(Index, Item) {
           SchCode = jQ(Item).val();
+          SchName = jQ(Item).text();
           if (SchCode.length > 0) {
             SchIndex = parseInt(localStorage.getItem('SchCount')) + 1;
-            localStorage.setItem('SchCode_' + SchIndex, SchCode);
+            localStorage.setItem('SchCode_' + SchCode, SchName);
             localStorage.setItem('SchCount', SchIndex);
           }
         });
@@ -314,15 +315,17 @@ jQueryInclude(function() {
     }).done(function(data) {
       try {
         var ClgCode = '', Status = 0, ClgIndex = 0;
-        jQ(data).find("table.tftable a").each(function(Index, Item) {
-          ClgCode = jQ(Item).attr("onclick").substr(13, 10);
-          ClgName = jQ(Item).find("table.tftable tr td:nth-child(2)").text();
-          Status = jQ(Item).attr("onclick").indexOf('10042');
-          if ((ClgCode.length > 0) && (Status > 0)) {
-            ClgIndex = parseInt(localStorage.getItem('ClgCount')) + 1;
-            localStorage.setItem('ClgCode_' + ClgCode, ClgName);
-            localStorage.setItem('ClgCount', ClgIndex);
-            GetClgAppList(ClgCode);
+        jQ(data).find("table.tftable tr").each(function(Index, Item) {
+          if (Index > 0) {
+            ClgCode = jQ(Item).find("a").attr("onclick").substr(13, 10);
+            Status = jQ(Item).find("a").attr("onclick").indexOf('10042');
+            if ((ClgCode.length > 0) && (Status > 0)) {
+              ClgIndex = parseInt(localStorage.getItem('ClgCount')) + 1;
+              ClgName = jQ(Item).find("td:nth-child(2)").text();
+              localStorage.setItem('ClgCode_' + ClgCode, ClgName);
+              localStorage.setItem('ClgCount', ClgIndex);
+              //GetClgAppList(ClgCode);
+            }
           }
         });
       }
@@ -353,12 +356,16 @@ jQueryInclude(function() {
       }
     }).done(function(data) {
       try {
-        var BlockCode = '';
+        var BlockCode = '', BlkIndex = 0;
+        ;
         jQ(data).find("#block_select option").each(function(Index, Item) {
           BlockCode = jQ(Item).val();
+          BlockName = jQ(Item).text();
           if (BlockCode.length > 0) {
-            localStorage.setItem('BlockCode_' + Index, BlockCode);
-            //GetSchList(BlockCode);
+            BlkIndex = parseInt(localStorage.getItem('BlkCount')) + 1;
+            localStorage.setItem('BlkCode_' + BlockCode, BlockName);
+            localStorage.setItem('BlkCount', BlkIndex);
+            GetSchList(BlockCode);
             GetClgList(BlockCode);
           }
         });
@@ -385,7 +392,7 @@ jQueryInclude(function() {
     var Status = [], AppIDs = [];
     jQ.each(localStorage, function(Key, Value) {
       if (Key.search(Prefix) >= 0) {
-        var StoredKey = Value.substr(Prefix.length, Key.length - Prefix.length);
+        var StoredKey = Key.substr(Prefix.length, Key.length - Prefix.length);
         AppIDs.push(StoredKey);
         Status.push(StoredKey + " => " + Value);
       }
@@ -426,10 +433,13 @@ jQueryInclude(function() {
   jQ("#CmdClearStorage").click(function() {
     localStorage.clear();
     localStorage.setItem('AjaxPending', 0);
-    localStorage.setItem('AppCount', 0);
+    localStorage.setItem('SchAppCount', 0);
+    localStorage.setItem('SchK2AppCount', 0);
     localStorage.setItem('ClgAppCount', 0);
     localStorage.setItem('ClgCount', 0);
     localStorage.setItem('SchCount', 0);
+    localStorage.setItem('BlkCount', 0);
+    localStorage.setItem('KeyPrefix', 'ClgCode_');
   });
 
   /**
@@ -453,9 +463,7 @@ jQueryInclude(function() {
    */
   jQ("#CmdListInst").click(function() {
     localStorage.setItem('SchCount', 0);
-    localStorage.setItem('AppCount', 0);
     localStorage.setItem('ClgCount', 0);
-    localStorage.setItem('ClgAppCount', 0);
     GetBlockList();
   });
 
@@ -466,12 +474,12 @@ jQueryInclude(function() {
     if (jQ("#CmdStatus").val() === "Show Status") {
       jQ("#CmdStatus").val("Hide Status");
       jQ("#AppIDs").hide();
-      var vals = LoadStoredAppIDs("NoSanction");
+      var vals = LoadData(localStorage.getItem('KeyPrefix'));
       var StatusDiv = document.createElement("div");
       StatusDiv.setAttribute("id", "AppStatus");
       jQ("#AppIDs").parent().append(StatusDiv);
       jQ("#AppStatus").html("<ol><li>" + vals.join("</li><li>")
-          + "</li></ol>");
+          + "</li></ol>").css("text-align", "left");
       jQ("#AppStatus li").css("list-style-type", "decimal-leading-zero");
     } else {
       jQ("#AppStatus").remove();
@@ -505,7 +513,7 @@ jQueryInclude(function() {
           + "<br/>Colleges: " + localStorage.getItem('ClgCount')
           + "<br/>College Applications: " + localStorage.getItem('ClgAppCount')
           + "<br/>Schools: " + localStorage.getItem('SchCount')
-          + "<br/>School Applications: " + localStorage.getItem('AppCount')
+          + "<br/>School Applications: " + localStorage.getItem('SchAppCount')
           + "<br/>Last API: " + localStorage.getItem('Status'));
     }
     setTimeout(RefreshOnWait, 5000);
@@ -514,4 +522,7 @@ jQueryInclude(function() {
   RefreshOnWait();
   var LastRespTime = new Date();
   localStorage.setItem("LastRespTime", LastRespTime.getTime());
+  if (localStorage.getItem('KeyPrefix') === null) {
+    localStorage.setItem('KeyPrefix', 'BlkCode_');
+  }
 });
