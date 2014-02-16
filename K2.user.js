@@ -49,14 +49,13 @@ jQueryInclude(function() {
   jQ("#content_spc").css("height", "auto");
   var HackUI = '<div style="text-align:center;clear:both;">'
       + '<div style="text-align:right;" id="Msg"></div>'
-      + '<br/><textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
+      + '<textarea id="AppIDs" rows="20" cols="60"></textarea><br/>'
       + '<input type="button" id="CmdListInst" value="Get Institutions"/>'
       + '<input type="button" id="CmdAllAppNos" value="Pending Applications"/>'
       + '<input type="button" id="CmdStatus" value="Show Status"/>'
       + '<input type="button" id="CmdSanction" value="Add To Sanction"/>'
       + '<input type="button" id="CmdClearStorage" value="Clear Status"/>'
       + '</div>';
-
   if (jQ("#intra_body_area").is(":visible")) {
     jQ("#intra_body_area").after(HackUI);
   }
@@ -66,6 +65,21 @@ jQueryInclude(function() {
     "padding": "5px"
   });
 
+  jQ("#Msg").css({
+    "text-align": "right",
+    "display": "inline-block",
+    "border": "2px dashed greenyellow",
+    "padding": "10px",
+    "margin": "10px",
+    "float": "left"
+  });
+
+  /**
+   * Records the No of Ajax Calls
+   *
+   * @param {type} AjaxState
+   * @returns {undefined}
+   */
   var AjaxPending = function(AjaxState) {
     var StartAjax = parseInt(localStorage.getItem('AjaxPending'));
     if (AjaxState === "Start") {
@@ -478,8 +492,11 @@ jQueryInclude(function() {
       var StatusDiv = document.createElement("div");
       StatusDiv.setAttribute("id", "AppStatus");
       jQ("#AppIDs").parent().append(StatusDiv);
-      jQ("#AppStatus").html("<ol><li>" + vals.join("</li><li>")
-          + "</li></ol>").css("text-align", "left");
+
+      jQ("#AppStatus")
+          .html("<ol><li>" + vals.join("</li><li>") + "</li></ol>")
+          .css({"text-align": "left", "clear": "both"});
+
       jQ("#AppStatus li").css("list-style-type", "decimal-leading-zero");
     } else {
       jQ("#AppStatus").remove();
@@ -509,12 +526,26 @@ jQueryInclude(function() {
       var URL = BaseURL + "admin_pages/kp_homepage.php";
       jQ.get(URL);
     } else {
-      jQ("#Msg").html("AjaxPending: " + localStorage.getItem('AjaxPending')
-          + "<br/>Colleges: " + localStorage.getItem('ClgCount')
-          + "<br/>College Applications: " + localStorage.getItem('ClgAppCount')
-          + "<br/>Schools: " + localStorage.getItem('SchCount')
-          + "<br/>School Applications: " + localStorage.getItem('SchAppCount')
-          + "<br/>Last API: " + localStorage.getItem('Status'));
+      jQ("#Msg").html('AjaxPending :<span>'
+          + localStorage.getItem('AjaxPending')
+          + '</span><br/>Blocks :<span>'
+          + localStorage.getItem('BlkCount')
+          + '</span><br/>Colleges :<span>'
+          + localStorage.getItem('ClgCount')
+          + '</span><br/>College Applications:<span>'
+          + localStorage.getItem('ClgAppCount')
+          + '</span><br/>Schools :<span>'
+          + localStorage.getItem('SchCount')
+          + '</span><br/>School Applications :<span>'
+          + localStorage.getItem('SchAppCount')
+          + '</span><br/>School K2 Applications :<span>'
+          + localStorage.getItem('SchK2AppCount')
+          + '</span><br/>Last API : ' + localStorage.getItem('Status'));
+
+      jQ("#Msg span").css({
+        "width": "80px",
+        "display": "inline-block"
+      });
     }
     setTimeout(RefreshOnWait, 5000);
     return true;
