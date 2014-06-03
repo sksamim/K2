@@ -250,7 +250,7 @@ jQueryInclude(function() {
         var AppNo = '', AppName = '', AppIndex = 0, Finalised = '';
         jQ(data).find("table.tftable tr td:nth-child(2)")
             .each(function(Index, Item) {
-          AppNo = jQ(Item).text().substr(0, 20);
+          AppNo = jQ(Item).text().trim().substr(0, 20);
           AppName = jQ(Item).next().text();
           Finalised = jQ(Item).next().next().text();
           Finalised = "Is " + Finalised;
