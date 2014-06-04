@@ -62,11 +62,12 @@ jQueryInclude(function() {
       + '<option value="BlockList">1. Block List</option>'
       + '<option value="ClgList">2. College List</option>'
       + '<option value="SchList">3. School List</option>'
-      + '<option value="SchListP">4. School List(Pending)</option>'
-      + '<option value="ClgAppList">5. College Applicants</option>'
-      + '<option value="SchAppList">6. School Applicants</option>'
-      + '<option value="SchK2AppList">7. School K2 Applicants</option>'
-      + '<option value="Sanction">8. Add To Sanction Order</option>'
+      + '<option value="SchListP">4. School List K1(Pending)</option>'
+      + '<option value="SchK2ListP">5. School List K2(Pending)</option>'
+      + '<option value="ClgAppList">6. College Applicants</option>'
+      + '<option value="SchAppList">7. School Applicants</option>'
+      + '<option value="SchK2AppList">8. School K2 Applicants</option>'
+      + '<option value="Sanction">9. Add To Sanction Order</option>'
       + '</select>';
 
   if (jQ("#intra_body_area").is(":visible")) {
@@ -280,12 +281,19 @@ jQueryInclude(function() {
    * @param {type} BlockCode
    * @returns {undefined}
    */
-  var GetSchListPending = function(BlockCode) {
+  var GetSchListPending = function(BlockCode, Scheme) {
     localStorage.setItem('Status', 'GetSchListP: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
+    var UrlLength = 41;
+    if (Scheme === "K2") {
+      Scheme = "_list_one.php";
+      UrlLength = 45;
+    } else {
+      Scheme = "_list.php";
+    }
     jQ.ajax({
       type: 'POST',
-      url: BaseURL + 'admin_pages/kp_dpmu_verify_block_list.php',
+      url: BaseURL + 'admin_pages/kp_dpmu_verify_block' + Scheme,
       dataType: 'html',
       xhrFields: {
         withCredentials: true
@@ -301,7 +309,7 @@ jQueryInclude(function() {
       try {
         var SchCode = '', SchName = '', SchIndex = 0;
         jQ(data).find("table.tftable tr td:nth-child(2) a").each(function(Index, Item) {
-          SchCode = jQ(Item).attr("href").trim().substr(41, 11);
+          SchCode = jQ(Item).attr("href").trim().substr(UrlLength, 11);
           SchName = jQ(Item).text();
           if (SchCode.length > 0) {
             SchIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
@@ -575,6 +583,19 @@ jQueryInclude(function() {
         }
         break;
 
+      case "SchK2ListP":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchK2Code_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function(Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetSchListPending, Value, 'K2'), Gap * Index);
+            }
+          });
+        }
+        break;
+
       case "ClgAppList":
         if (ForStep === "Prepare") {
           localStorage.setItem('KeyPrefix', 'ClgAppNo_');
@@ -619,12 +640,14 @@ jQueryInclude(function() {
 
         if (ForStep === "Prepare") {
           localStorage.setItem('KeyPrefix', 'Sanction');
-          alert(OrderNo);
           if (OrderNo === null) {
             localStorage.setItem('OrderNo', jQ("#AllIDs").val());
+            OrderNo = localStorage.getItem('OrderNo');
+            jQ("#AllIDs").val('');
           }
-          if (OrderNo === null) {
-            jQ("#Info").html('Sanction OrderNo. is Required!');
+          alert("Sanction OrderNo.: [" + OrderNo + "]");
+          if (OrderNo === '') {
+            jQ("#Info").html('Sanction OrderNo. is Mandatory!');
             jQ("#AllIDs").val('');
           } else if (OrderNo.length > 0) {
             jQ("#Info").html('Sanction Order No.: ' + OrderNo);
@@ -707,6 +730,7 @@ jQueryInclude(function() {
     localStorage.setItem('BlkCode_Count', 0);
     localStorage.setItem('ClgCode_Count', 0);
     localStorage.setItem('SchCode_Count', 0);
+    localStorage.setItem('SchK2Code_Count', 0);
     localStorage.setItem('ClgAppNo_Count', 0);
     localStorage.setItem('SchAppNo_Count', 0);
     localStorage.setItem('SchK2AppNo_Count', 0);
@@ -745,6 +769,8 @@ jQueryInclude(function() {
           + localStorage.getItem('ClgAppNo_Count')
           + '</span><br/>Schools :<span>'
           + localStorage.getItem('SchCode_Count')
+          + '</span><br/>Schools K2 :<span>'
+          + localStorage.getItem('SchK2Code_Count')
           + '</span><br/>School Applications :<span>'
           + localStorage.getItem('SchAppNo_Count')
           + '</span><br/>School K2 Applications :<span>'
