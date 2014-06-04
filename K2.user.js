@@ -49,6 +49,7 @@ jQueryInclude(function() {
   jQ("#content_spc").css("height", "auto");
   var HackUI = '<div style="text-align:center;clear:both;">'
       + '<div style="text-align:right;" id="Msg"></div>'
+      + '<div id="Info"></div>'
       + '<textarea id="AllIDs" rows="20" cols="60"></textarea><br/>'
       + '<input type="button" id="CmdGo" value="Do at Own Risk"/>'
       + '<input type="button" id="CmdStatus" value="Show All"/>'
@@ -151,7 +152,7 @@ jQueryInclude(function() {
    */
   var AddToSanctionAppID = function(AppID) {
     localStorage.setItem('Status', 'AddToSanctionAppID: ' + AppID);
-    var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
+    var OrderNo = localStorage.getItem('OrderNo');
     jQ.ajax({
       type: 'GET',
       url: BaseURL + 'admin_pages/kp_sanction_order_generation_insert.php',
@@ -161,7 +162,7 @@ jQueryInclude(function() {
       },
       data: {
         'applicant_id': AppID,
-        'sanction_order': SanctionOrderNo,
+        'sanction_order': OrderNo,
         'type': 'add'
       }
     }).done(function(data) {
@@ -614,24 +615,33 @@ jQueryInclude(function() {
         break;
 
       case "Sanction":
+        var OrderNo = localStorage.getItem('OrderNo');
+
         if (ForStep === "Prepare") {
           localStorage.setItem('KeyPrefix', 'Sanction');
-
-          localStorage.setItem('SanctionOrderNo', jQ("#AllIDs").val());
-          var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
-          if (SanctionOrderNo === null) {
-            jQ("#Msg").html('Please provide Sanction Order No.');
+          alert(OrderNo);
+          if (OrderNo === null) {
+            localStorage.setItem('OrderNo', jQ("#AllIDs").val());
+          }
+          if (OrderNo === null) {
+            jQ("#Info").html('Sanction OrderNo. is Required!');
             jQ("#AllIDs").val('');
-          } else if (SanctionOrderNo.length > 0) {
-            jQ("#Msg").html('Sanction Order No.: ' + SanctionOrderNo);
+          } else if (OrderNo.length > 0) {
+            jQ("#Info").html('Sanction Order No.: ' + OrderNo);
           }
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function(Index, Value) {
-            if (Value.length > 0) {
-              setTimeout(AjaxFunnel(SanctionAppID, Value), Gap * Index);
-            }
-          });
+          var OrderNo = localStorage.getItem('OrderNo');
+          if (OrderNo.length === 14) {
+            jQ.each(AllIDs, function(Index, Value) {
+              if (Value.length > 0) {
+                setTimeout(AjaxFunnel(SanctionAppID, Value), Gap * Index);
+              }
+            });
+          } else {
+            jQ("#Info").html('Sanction OrderNo. is Required!');
+          }
+
         }
         break;
     }
