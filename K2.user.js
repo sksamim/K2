@@ -620,10 +620,10 @@ jQueryInclude(function() {
           localStorage.setItem('SanctionOrderNo', jQ("#AllIDs").val());
           var SanctionOrderNo = localStorage.getItem('SanctionOrderNo');
           if (SanctionOrderNo === null) {
-            jQ("#Msg").after('Please provide Sanction Order No.');
+            jQ("#Msg").html('Please provide Sanction Order No.');
             jQ("#AllIDs").val('');
           } else if (SanctionOrderNo.length > 0) {
-            jQ("#Msg").after('Sanction Order No.: ' + SanctionOrderNo);
+            jQ("#Msg").html('Sanction Order No.: ' + SanctionOrderNo);
           }
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
