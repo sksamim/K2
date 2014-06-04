@@ -61,10 +61,11 @@ jQueryInclude(function() {
       + '<option value="BlockList">1. Block List</option>'
       + '<option value="ClgList">2. College List</option>'
       + '<option value="SchList">3. School List</option>'
-      + '<option value="ClgAppList">4. College Applicants</option>'
-      + '<option value="SchAppList">5. School Applicants</option>'
-      + '<option value="SchK2AppList">6. School K2 Applicants</option>'
-      + '<option value="Sanction">7. Add To Sanction Order</option>'
+      + '<option value="SchListP">4. School List(Pending)</option>'
+      + '<option value="ClgAppList">5. College Applicants</option>'
+      + '<option value="SchAppList">6. School Applicants</option>'
+      + '<option value="SchK2AppList">7. School K2 Applicants</option>'
+      + '<option value="Sanction">8. Add To Sanction Order</option>'
       + '</select>';
 
   if (jQ("#intra_body_area").is(":visible")) {
@@ -250,14 +251,61 @@ jQueryInclude(function() {
         var AppNo = '', AppName = '', AppIndex = 0, Finalised = '';
         jQ(data).find("table.tftable tr td:nth-child(2)")
             .each(function(Index, Item) {
-          AppNo = jQ(Item).text().trim().substr(0, 20);
-          AppName = jQ(Item).next().text();
-          Finalised = jQ(Item).next().next().text();
-          Finalised = "Is " + Finalised;
-          if (Finalised.indexOf("FINALIZED") < 0) {
-            AppIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
-            localStorage.setItem(KeyPrefix + AppNo, AppName);
-            localStorage.setItem(KeyPrefix + 'Count', AppIndex);
+              AppNo = jQ(Item).text().trim().substr(0, 20);
+              AppName = jQ(Item).next().text();
+              Finalised = jQ(Item).next().next().text();
+              Finalised = "Is " + Finalised;
+              if (Finalised.indexOf("FINALIZED") < 0) {
+                AppIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
+                localStorage.setItem(KeyPrefix + AppNo, AppName);
+                localStorage.setItem(KeyPrefix + 'Count', AppIndex);
+              }
+            });
+      }
+      catch (e) {
+        localStorage.setItem(KeyPrefix + ' Error:', e);
+      }
+    }).fail(function(FailMsg) {
+      localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
+    }).always(function() {
+      AjaxPending("Stop");
+    });
+  };
+
+  /**
+   * http://wbkanyashree.gov.in/admin_pages/kp_dpmu_verify_block_list.php
+   * block_select=192018&tot_pen=192018&schcd=&status=10042&mode=search
+   *
+   * @param {type} BlockCode
+   * @returns {undefined}
+   */
+  var GetSchListPending = function(BlockCode) {
+    localStorage.setItem('Status', 'GetSchListP: ' + BlockCode);
+    var KeyPrefix = localStorage.getItem('KeyPrefix');
+    jQ.ajax({
+      type: 'POST',
+      url: BaseURL + 'admin_pages/kp_dpmu_verify_block_list.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      },
+      data: {
+        'block_select': BlockCode,
+        'tot_pen': BlockCode,
+        'schcd': '',
+        'status': '10042',
+        'mode': 'search'
+      }
+    }).done(function(data) {
+      try {
+        var SchCode = '', SchName = '', SchIndex = 0;
+        jQ(data).find("table.tftable tr td:nth-child(2) a").each(function(Index, Item) {
+          SchCode = jQ(Item).attr("href").trim().substr(41, 11);
+          SchName = jQ(Item).text();
+          if (SchCode.length > 0) {
+            SchIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
+            localStorage.setItem(KeyPrefix + SchCode, SchName);
+            localStorage.setItem(KeyPrefix + 'Count', SchIndex);
           }
         });
       }
@@ -339,16 +387,16 @@ jQueryInclude(function() {
         var AppNo = '', AppName = '', AppCount = 0;
         jQ(data).find("table.tftable tr td:nth-child(2)")
             .each(function(Index, Item) {
-          AppNo = jQ(Item).text();
-          AppName = jQ(Item).next().text();
-          var Finalised = jQ(Item).next().next().text();
-          Finalised = "Is " + Finalised;
-          if (Finalised.indexOf("FINALIZED") < 0) {
-            AppCount = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
-            localStorage.setItem(KeyPrefix + AppNo, AppName);
-            localStorage.setItem(KeyPrefix + 'Count', AppCount);
-          }
-        });
+              AppNo = jQ(Item).text();
+              AppName = jQ(Item).next().text();
+              var Finalised = jQ(Item).next().next().text();
+              Finalised = "Is " + Finalised;
+              if (Finalised.indexOf("FINALIZED") < 0) {
+                AppCount = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
+                localStorage.setItem(KeyPrefix + AppNo, AppName);
+                localStorage.setItem(KeyPrefix + 'Count', AppCount);
+              }
+            });
       }
       catch (e) {
         localStorage.setItem(KeyPrefix + ' Error:', e);
@@ -508,6 +556,19 @@ jQueryInclude(function() {
           jQ.each(AllIDs, function(Index, Value) {
             if (Value.length > 0) {
               setTimeout(AjaxFunnel(GetSchList, Value), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "SchListP":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchCode_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function(Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetSchListPending, Value), Gap * Index);
             }
           });
         }
