@@ -645,7 +645,6 @@ jQueryInclude(function() {
             OrderNo = localStorage.getItem('OrderNo');
             jQ("#AllIDs").val('');
           }
-          alert("Sanction OrderNo.: [" + OrderNo + "]");
           if (OrderNo === '') {
             jQ("#Info").html('Sanction OrderNo. is Mandatory!');
             jQ("#AllIDs").val('');
