@@ -23,7 +23,7 @@ function jQueryInclude(callback) {
   var jQueryScript = document.createElement("script");
   var jQueryCDN = "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js";
   jQueryScript.setAttribute("src", jQueryCDN);
-  jQueryScript.addEventListener('load', function() {
+  jQueryScript.addEventListener('load', function () {
     var UserScript = document.createElement("script");
     UserScript.textContent = 'window.jQ=jQuery.noConflict(true);'
         + 'var BaseURL = "http://wbkanyashree.gov.in/";'
@@ -35,20 +35,21 @@ function jQueryInclude(callback) {
 
 /**
  * Main Body of Helper Script For Kanyashree Approval and Sanction Generation
- *
- * @returns {undefined}
  */
-jQueryInclude(function() {
+jQueryInclude(function () {
 
   jQ("#top").hide();
   jQ("#header").hide();
   jQ("#footerMain").hide();
-  jQ("option").html(function() {
+  jQ("option").html(function () {
     return jQ(this).val() + " - " + jQ(this).html();
   });
   jQ("#content_spc").css("height", "auto");
   var HackUI = '<div style="text-align:center;clear:both;">'
+      + '<div>'
       + '<div style="text-align:right;" id="Msg"></div>'
+      + '<div id="reCaptcha"></div>'
+      + '</div>'
       + '<div id="Info"></div>'
       + '<textarea id="AllIDs" rows="20" cols="60"></textarea><br/>'
       + '<input type="button" id="CmdGo" value="Do at Own Risk"/>'
@@ -67,7 +68,8 @@ jQueryInclude(function() {
       + '<option value="ClgAppList">6. College Applicants</option>'
       + '<option value="SchAppList">7. School Applicants</option>'
       + '<option value="SchK2AppList">8. School K2 Applicants</option>'
-      + '<option value="Sanction">9. Add To Sanction Order</option>'
+      + '<option value="Sanction">9. Finalize Applications</option>'
+      + '<option value="AddToSanction">10. Add To Sanction Order</option>'
       + '</select>';
 
   if (jQ("#intra_body_area").is(":visible")) {
@@ -89,14 +91,25 @@ jQueryInclude(function() {
     "float": "left"
   });
 
+  jQ("#reCaptcha").css({
+    "text-align": "center",
+    "display": "inline-block",
+    "border": "2px dashed greenyellow",
+    "padding": "10px",
+    "margin": "10px",
+    "float": "left",
+    "clear": "both"
+  }).hide();
+
   /**
    * Limits No of AjaxCalls at a time
    *
    * @param {type} Fn
-   * @param {type} Arg
+   * @param {type} Arg1
+   * @param {type} Arg2
    * @returns {Boolean}
    */
-  var AjaxFunnel = function(Fn, Arg1, Arg2) {
+  var AjaxFunnel = function (Fn, Arg1, Arg2) {
     var NextCallTimeOut = 2500;
     var PendingAjax = parseInt(localStorage.getItem('AjaxPending'));
     var AjaxLimit = parseInt(localStorage.getItem('AjaxLimit'));
@@ -133,7 +146,7 @@ jQueryInclude(function() {
    * @param {type} AjaxState
    * @returns {undefined}
    */
-  var AjaxPending = function(AjaxState) {
+  var AjaxPending = function (AjaxState) {
     var StartAjax = parseInt(localStorage.getItem('AjaxPending'));
     if (AjaxState === "Start") {
       localStorage.setItem('AjaxPending', StartAjax + 1);
@@ -151,32 +164,33 @@ jQueryInclude(function() {
    * @param {string} AppID
    * @returns {void}
    */
-  var AddToSanctionAppID = function(AppID) {
-    localStorage.setItem('Status', 'AddToSanctionAppID: ' + AppID);
+  var AddToSanction = function () {
+    localStorage.setItem('Status', 'AddToSanctionAppID: ');
     var OrderNo = localStorage.getItem('OrderNo');
     jQ.ajax({
-      type: 'GET',
+      type: 'POST',
       url: BaseURL + 'admin_pages/kp_sanction_order_generation_insert.php',
       dataType: 'html',
       xhrFields: {
         withCredentials: true
       },
       data: {
-        'applicant_id': AppID,
+        'selectedIds': jQ("#AllIDs").val(),
         'sanction_order': OrderNo,
-        'type': 'add'
+        'type': 'add',
+        'security_code': jQ("#captchaCode").val()
       }
-    }).done(function(data) {
+    }).done(function (data) {
       try {
         var SanctionStatus = jQ(data).find("div.sanction_block").next().text();
-        localStorage.setItem('AddToSanction:' + AppID, SanctionStatus);
+        localStorage.setItem('AddToSanction:', SanctionStatus);
       }
       catch (e) {
-        localStorage.setItem('AddToSanction Error:' + AppID, e);
+        localStorage.setItem('AddToSanction Error:', e);
       }
-    }).fail(function(FailMsg) {
-      localStorage.setItem('AddToSanction Fail:' + AppID, FailMsg.statusText);
-    }).always(function() {
+    }).fail(function (FailMsg) {
+      localStorage.setItem('AddToSanction Fail:', FailMsg.statusText);
+    }).always(function () {
       AjaxPending("Stop");
     });
   };
@@ -187,7 +201,7 @@ jQueryInclude(function() {
    * @param {type} AppID
    * @returns {undefined}
    */
-  var SanctionAppID = function(AppID) {
+  var FinalizeAppID = function (AppID) {
     localStorage.setItem('Status', 'SanctionAppID: ' + AppID);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
@@ -203,17 +217,16 @@ jQueryInclude(function() {
         'fwd_to': '10047',
         'applicant_id': AppID
       }
-    }).done(function(data) {
+    }).done(function (data) {
       try {
         localStorage.setItem(KeyPrefix + ':' + AppID, data);
-        setTimeout(AjaxFunnel(AddToSanctionAppID, AppID), 1000);
       }
       catch (e) {
         localStorage.setItem(KeyPrefix + ' Error:' + AppID, e);
       }
-    }).fail(function(FailMsg) {
+    }).fail(function (FailMsg) {
       localStorage.setItem(KeyPrefix + ' Fail:' + AppID, FailMsg.statusText);
-    }).always(function() {
+    }).always(function () {
       AjaxPending("Stop");
     });
   };
@@ -228,7 +241,7 @@ jQueryInclude(function() {
    * @param {type} ClgCode
    * @returns {undefined}
    */
-  var GetSchAppList = function(SchCode, Scheme) {
+  var GetSchAppList = function (SchCode, Scheme) {
     localStorage.setItem('Status', 'GetSchAppList: ' + SchCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     if (Scheme === "K2") {
@@ -248,11 +261,11 @@ jQueryInclude(function() {
         'schcd': SchCode,
         'pending': ''
       }
-    }).done(function(data) {
+    }).done(function (data) {
       try {
         var AppNo = '', AppName = '', AppIndex = 0, Finalised = '';
         jQ(data).find("table.tftable tr td:nth-child(2)")
-            .each(function(Index, Item) {
+            .each(function (Index, Item) {
               AppNo = jQ(Item).text().trim().substr(0, 20);
               AppName = jQ(Item).next().text();
               Finalised = jQ(Item).next().next().text();
@@ -267,9 +280,9 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem(KeyPrefix + ' Error:', e);
       }
-    }).fail(function(FailMsg) {
+    }).fail(function (FailMsg) {
       localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
-    }).always(function() {
+    }).always(function () {
       AjaxPending("Stop");
     });
   };
@@ -281,7 +294,7 @@ jQueryInclude(function() {
    * @param {type} BlockCode
    * @returns {undefined}
    */
-  var GetSchListPending = function(BlockCode, Scheme) {
+  var GetSchListPending = function (BlockCode, Scheme) {
     localStorage.setItem('Status', 'GetSchListP: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     var UrlLength = 41;
@@ -305,10 +318,10 @@ jQueryInclude(function() {
         'status': '10042',
         'mode': 'search'
       }
-    }).done(function(data) {
+    }).done(function (data) {
       try {
         var SchCode = '', SchName = '', SchIndex = 0;
-        jQ(data).find("table.tftable tr td:nth-child(2) a").each(function(Index, Item) {
+        jQ(data).find("table.tftable tr td:nth-child(2) a").each(function (Index, Item) {
           SchCode = jQ(Item).attr("href").trim().substr(UrlLength, 11);
           SchName = jQ(Item).text();
           if (SchCode.length > 0) {
@@ -321,9 +334,9 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem(KeyPrefix + ' Error:', e);
       }
-    }).fail(function(FailMsg) {
+    }).fail(function (FailMsg) {
       localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
-    }).always(function() {
+    }).always(function () {
       AjaxPending("Stop");
     });
   };
@@ -333,7 +346,7 @@ jQueryInclude(function() {
    * @param {type} BlockCode
    * @returns {undefined}
    */
-  var GetSchList = function(BlockCode) {
+  var GetSchList = function (BlockCode) {
     localStorage.setItem('Status', 'GetSchList: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
@@ -348,10 +361,10 @@ jQueryInclude(function() {
         'slc_name': 'schcd',
         'slc_class': ''
       }
-    }).done(function(data) {
+    }).done(function (data) {
       try {
         var SchCode = '', SchName = '', SchIndex = 0;
-        jQ(data).find("option").each(function(Index, Item) {
+        jQ(data).find("option").each(function (Index, Item) {
           SchCode = jQ(Item).val();
           SchName = jQ(Item).text();
           if (SchCode.length > 0) {
@@ -364,9 +377,9 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem(KeyPrefix + ' Error:', e);
       }
-    }).fail(function(FailMsg) {
+    }).fail(function (FailMsg) {
       localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
-    }).always(function() {
+    }).always(function () {
       AjaxPending("Stop");
     });
   };
@@ -377,7 +390,7 @@ jQueryInclude(function() {
    * @param {type} BlockCode
    * @returns {undefined}
    */
-  var GetClgAppList = function(ClgCode) {
+  var GetClgAppList = function (ClgCode) {
     localStorage.setItem('Status', 'GetClgAppList: ' + ClgCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
@@ -391,11 +404,11 @@ jQueryInclude(function() {
         'status': '10042',
         'schcd': ClgCode
       }
-    }).done(function(data) {
+    }).done(function (data) {
       try {
         var AppNo = '', AppName = '', AppCount = 0;
         jQ(data).find("table.tftable tr td:nth-child(2)")
-            .each(function(Index, Item) {
+            .each(function (Index, Item) {
               AppNo = jQ(Item).text();
               AppName = jQ(Item).next().text();
               var Finalised = jQ(Item).next().next().text();
@@ -410,9 +423,9 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem(KeyPrefix + ' Error:', e);
       }
-    }).fail(function(FailMsg) {
+    }).fail(function (FailMsg) {
       localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
-    }).always(function() {
+    }).always(function () {
       AjaxPending("Stop");
     });
   };
@@ -423,7 +436,7 @@ jQueryInclude(function() {
    * @param {type} BlockCode
    * @returns {undefined}
    */
-  var GetClgList = function(BlockCode) {
+  var GetClgList = function (BlockCode) {
     localStorage.setItem('Status', 'GetClgList: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
@@ -436,10 +449,10 @@ jQueryInclude(function() {
       data: {
         'block_code': BlockCode
       }
-    }).done(function(data) {
+    }).done(function (data) {
       try {
         var ClgCode = '', Status = 0, ClgIndex = 0;
-        jQ(data).find("table.tftable tr").each(function(Index, Item) {
+        jQ(data).find("table.tftable tr").each(function (Index, Item) {
           if (Index > 0) {
             ClgCode = jQ(Item).find("a").attr("onclick").substr(13, 10);
             Status = jQ(Item).find("a").attr("onclick").indexOf('10042');
@@ -455,9 +468,9 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem(KeyPrefix + ' Error:', e);
       }
-    }).fail(function(FailMsg) {
+    }).fail(function (FailMsg) {
       localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
-    }).always(function() {
+    }).always(function () {
       AjaxPending("Stop");
     });
   };
@@ -467,7 +480,7 @@ jQueryInclude(function() {
    *
    * @returns {undefined}
    */
-  var GetBlockList = function() {
+  var GetBlockList = function () {
     localStorage.setItem('Status', 'Request Blocks');
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
@@ -477,10 +490,10 @@ jQueryInclude(function() {
       xhrFields: {
         withCredentials: true
       }
-    }).done(function(data) {
+    }).done(function (data) {
       try {
         var BlockCode = '', BlkIndex = 0;
-        jQ(data).find("#block_select option").each(function(Index, Item) {
+        jQ(data).find("#block_select option").each(function (Index, Item) {
           BlockCode = jQ(Item).val();
           BlockName = jQ(Item).text();
           if (BlockCode.length > 0) {
@@ -494,9 +507,9 @@ jQueryInclude(function() {
       catch (e) {
         localStorage.setItem(KeyPrefix + ' Error:', e);
       }
-    }).fail(function(FailMsg) {
+    }).fail(function (FailMsg) {
       localStorage.setItem(KeyPrefix + ' Fail:', FailMsg.statusText);
-    }).always(function() {
+    }).always(function () {
       AjaxPending("Stop");
     });
   };
@@ -507,10 +520,10 @@ jQueryInclude(function() {
    * @param {type} Prefix
    * @returns {Array}
    */
-  var LoadData = function(Prefix) {
+  var LoadData = function (Prefix) {
     localStorage.setItem('Status', 'Load: ' + Prefix + '*');
     var Status = [], AllIDs = [];
-    jQ.each(localStorage, function(Key, Value) {
+    jQ.each(localStorage, function (Key, Value) {
       if (Key.search(Prefix) >= 0) {
         var StoredKey = Key.substr(Prefix.length, Key.length - Prefix.length);
         AllIDs.push(StoredKey);
@@ -529,7 +542,7 @@ jQueryInclude(function() {
    * @param {type} ForStep
    * @returns {undefined}
    */
-  var GoForAction = function(ForStep) {
+  var GoForAction = function (ForStep) {
 
     var AllIDs = jQ("#AllIDs").val().split(",");
     var Gap = 250;
@@ -549,7 +562,7 @@ jQueryInclude(function() {
           localStorage.setItem('KeyPrefix', 'ClgCode_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function(Index, Value) {
+          jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
               setTimeout(AjaxFunnel(GetClgList, Value), Gap * Index);
             }
@@ -562,7 +575,7 @@ jQueryInclude(function() {
           localStorage.setItem('KeyPrefix', 'SchCode_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function(Index, Value) {
+          jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
               setTimeout(AjaxFunnel(GetSchList, Value), Gap * Index);
             }
@@ -575,7 +588,7 @@ jQueryInclude(function() {
           localStorage.setItem('KeyPrefix', 'SchCode_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function(Index, Value) {
+          jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
               setTimeout(AjaxFunnel(GetSchListPending, Value), Gap * Index);
             }
@@ -588,7 +601,7 @@ jQueryInclude(function() {
           localStorage.setItem('KeyPrefix', 'SchK2Code_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function(Index, Value) {
+          jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
               setTimeout(AjaxFunnel(GetSchListPending, Value, 'K2'), Gap * Index);
             }
@@ -601,7 +614,7 @@ jQueryInclude(function() {
           localStorage.setItem('KeyPrefix', 'ClgAppNo_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function(Index, Value) {
+          jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
               setTimeout(AjaxFunnel(GetClgAppList, Value), Gap * Index);
             }
@@ -614,7 +627,7 @@ jQueryInclude(function() {
           localStorage.setItem('KeyPrefix', 'SchAppNo_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function(Index, Value) {
+          jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
               setTimeout(AjaxFunnel(GetSchAppList, Value, 'K1'), Gap * Index);
             }
@@ -627,7 +640,7 @@ jQueryInclude(function() {
           localStorage.setItem('KeyPrefix', 'SchK2AppNo_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function(Index, Value) {
+          jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
               setTimeout(AjaxFunnel(GetSchAppList, Value, 'K2'), Gap * Index);
             }
@@ -636,6 +649,20 @@ jQueryInclude(function() {
         break;
 
       case "Sanction":
+
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'Sanction');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function (Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(FinalizeAppID, Value), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "AddToSanction":
         var OrderNo = localStorage.getItem('OrderNo');
 
         if (ForStep === "Prepare") {
@@ -650,20 +677,17 @@ jQueryInclude(function() {
             jQ("#AllIDs").val('');
           } else if (OrderNo.length > 0) {
             jQ("#Info").html('Sanction Order No.: ' + OrderNo);
+            var reCaptchaUI = '<img id="captcha" class="captcha_image" src="../captcha/captcha.php">'
+                + '<br/><input id="captchaCode" style="width: 120px;"/>';
+            jQ("#reCaptcha").html(reCaptchaUI).show();
           }
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          var OrderNo = localStorage.getItem('OrderNo');
           if (OrderNo.length === 14) {
-            jQ.each(AllIDs, function(Index, Value) {
-              if (Value.length > 0) {
-                setTimeout(AjaxFunnel(SanctionAppID, Value), Gap * Index);
-              }
-            });
+            setTimeout(AjaxFunnel(AddToSanction), Gap * Index);
           } else {
             jQ("#Info").html('Sanction OrderNo. is Required!');
           }
-
         }
         break;
     }
@@ -672,21 +696,21 @@ jQueryInclude(function() {
   /**
    * Prepare for Selected Action
    */
-  jQ("#OptAction").change(function() {
+  jQ("#OptAction").change(function () {
     GoForAction("Prepare");
   });
 
   /**
    * Perform the Selected Action
    */
-  jQ("#CmdGo").click(function() {
+  jQ("#CmdGo").click(function () {
     GoForAction("Perform");
   });
 
   /**
    * Loads the contents of localStorage into the interface
    */
-  jQ("#CmdStatus").click(function() {
+  jQ("#CmdStatus").click(function () {
     if (jQ("#CmdStatus").val() === "Show All") {
       jQ("#CmdStatus").val("Load All");
       jQ("#AllIDs").hide();
@@ -710,9 +734,9 @@ jQueryInclude(function() {
   /**
    * Clear Individual Contents of localStorage
    */
-  jQ("#CmdClear").click(function() {
+  jQ("#CmdClear").click(function () {
     var Prefix = localStorage.getItem('KeyPrefix');
-    jQ.each(localStorage, function(Key) {
+    jQ.each(localStorage, function (Key) {
       if (Key.search(Prefix) >= 0) {
         localStorage.removeItem(Key);
       }
@@ -723,7 +747,7 @@ jQueryInclude(function() {
   /**
    * Clears all the contents of localStorage
    */
-  jQ("#CmdClearStorage").click(function() {
+  jQ("#CmdClearStorage").click(function () {
     localStorage.clear();
     localStorage.setItem('AjaxPending', 0);
     localStorage.setItem('BlkCode_Count', 0);
@@ -742,7 +766,7 @@ jQueryInclude(function() {
    *
    * @returns {Boolean}
    */
-  var RefreshOnWait = function() {
+  var RefreshOnWait = function () {
     var CurrDate = new Date(), TimeOut;
     var LastRespTime = new Date(localStorage.getItem("LastRespTime"));
     var ElapsedTime = CurrDate.getTime() - LastRespTime.getTime();
