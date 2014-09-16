@@ -51,7 +51,7 @@ jQueryInclude(function () {
       + '<div id="reCaptcha"></div>'
       + '</div>'
       + '<div id="Info"></div>'
-      + '<textarea id="AllIDs" rows="20" cols="60"></textarea><br/>'
+      + '<textarea id="AllIDs" rows="20" cols="70"></textarea><br/>'
       + '<input type="button" id="CmdGo" value="Do at Own Risk"/>'
       + '<input type="button" id="CmdStatus" value="Show All"/>'
       + '<input type="button" id="CmdClear" value="Delete"/>'
@@ -95,7 +95,7 @@ jQueryInclude(function () {
     "text-align": "center",
     "display": "inline-block",
     "border": "2px dashed greenyellow",
-    "padding": "10px",
+    "padding": "5px",
     "margin": "10px",
     "float": "left",
     "clear": "both"
@@ -798,7 +798,9 @@ jQueryInclude(function () {
           + localStorage.getItem('SchAppNo_Count')
           + '</span><br/>School K2 Applications :<span>'
           + localStorage.getItem('SchK2AppNo_Count')
-          + '</span><br/>Last API : '
+          + '</span><br/><br/>Sanction OrderNo :<b>'
+          + localStorage.getItem('OrderNo')
+          + '</b><br/><br/>Last API : '
           + localStorage.getItem('Status')
           + '<br/><br/>' + localStorage.getItem('LastRespTime'));
 
