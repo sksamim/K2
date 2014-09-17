@@ -547,6 +547,11 @@ jQueryInclude(function () {
     var AllIDs = jQ("#AllIDs").val().split(",");
     var Gap = 250;
 
+    if (ForStep !== "Prepare") {
+      jQ("#OptAction").prop("disabled", "disabled");
+      jQ("#CmdGo").prop("disabled", "disabled");
+    }
+
     switch (jQ("#OptAction").val()) {
       case "BlockList":
         if (ForStep === "Prepare") {
@@ -803,6 +808,11 @@ jQueryInclude(function () {
           + '</b><br/><br/>Last API : '
           + localStorage.getItem('Status')
           + '<br/><br/>' + localStorage.getItem('LastRespTime'));
+
+      if (localStorage.getItem('AjaxPending') === "0") {
+        jQ("#OptAction").removeProp("disabled");
+        jQ("#CmdGo").removeProp("disabled");
+      }
 
       jQ("#Msg span").css({
         "width": "80px",
