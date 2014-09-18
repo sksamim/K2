@@ -67,9 +67,10 @@ jQueryInclude(function () {
       + '<option value="SchK2ListP">5. School List K2(Pending)</option>'
       + '<option value="ClgAppList">6. College Applicants</option>'
       + '<option value="SchAppList">7. School Applicants</option>'
-      + '<option value="SchK2AppList">8. School K2 Applicants</option>'
-      + '<option value="Sanction">9. Finalize Applications</option>'
-      + '<option value="AddToSanction">10. Add To Sanction Order</option>'
+      + '<option value="SchAppListAllPages">8. School Applicants(All Pages)</option>'
+      + '<option value="SchK2AppList">9. School K2 Applicants</option>'
+      + '<option value="Sanction">10. Finalize Applications</option>'
+      + '<option value="AddToSanction">11. Add To Sanction Order</option>'
       + '</select>';
 
   if (jQ("#intra_body_area").is(":visible")) {
@@ -109,7 +110,7 @@ jQueryInclude(function () {
    * @param {type} Arg2
    * @returns {Boolean}
    */
-  var AjaxFunnel = function (Fn, Arg1, Arg2) {
+  var AjaxFunnel = function (Fn, Arg1, Arg2, Arg3) {
     var NextCallTimeOut = 2500;
     var PendingAjax = parseInt(localStorage.getItem('AjaxPending'));
     var AjaxLimit = parseInt(localStorage.getItem('AjaxLimit'));
@@ -121,8 +122,10 @@ jQueryInclude(function () {
         setTimeout(AjaxFunnel(Fn), NextCallTimeOut);
       } else if (typeof Arg2 === "undefined") {
         setTimeout(AjaxFunnel(Fn, Arg1), NextCallTimeOut);
-      } else {
+      } else if (typeof Arg3 === "undefined") {
         setTimeout(AjaxFunnel(Fn, Arg1, Arg2), NextCallTimeOut);
+      } else {
+        setTimeout(AjaxFunnel(Fn, Arg1, Arg2, Arg3), NextCallTimeOut);
       }
       return false;
     } else {
@@ -132,11 +135,13 @@ jQueryInclude(function () {
       } else if (typeof Arg2 === "undefined") {
         AjaxPending("Start");
         return Fn(Arg1);
-      } else {
+      } else if (typeof Arg3 === "undefined") {
         AjaxPending("Start");
         return Fn(Arg1, Arg2);
+      } else {
+        AjaxPending("Start");
+        return Fn(Arg1, Arg2, Arg3);
       }
-      return true;
     }
   };
 
@@ -241,7 +246,7 @@ jQueryInclude(function () {
    * @param {type} ClgCode
    * @returns {undefined}
    */
-  var GetSchAppList = function (SchCode, Scheme) {
+  var GetSchAppList = function (SchCode, Scheme, PageNo) {
     localStorage.setItem('Status', 'GetSchAppList: ' + SchCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     if (Scheme === "K2") {
@@ -259,7 +264,8 @@ jQueryInclude(function () {
       data: {
         'status': '10042',
         'schcd': SchCode,
-        'pending': ''
+        'pending': '1',
+        'page': PageNo
       }
     }).done(function (data) {
       try {
@@ -634,7 +640,24 @@ jQueryInclude(function () {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchAppList, Value, 'K1'), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchAppList, Value, "K1","1"), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "SchAppListAllPages":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchAppNo_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          var AppCount=0;
+          jQ.each(AllIDs, function (Index, Value) {
+            if (Value.length > 0) {
+              AppCount=Number(localStorage.getItem('SchCode_'+Value));
+              for(i=0,Page=1;i<AppCount;i+=5,Page++){
+                setTimeout(AjaxFunnel(GetSchAppList, Value, "K1",i), Gap * (Index + i));
+              }
             }
           });
         }
