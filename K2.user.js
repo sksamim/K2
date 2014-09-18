@@ -656,7 +656,7 @@ jQueryInclude(function () {
             if (Value.length > 0) {
               AppCount=Number(localStorage.getItem('SchCode_'+Value));
               for(i=0,Page=1;i<AppCount;i+=5,Page++){
-                setTimeout(AjaxFunnel(GetSchAppList, Value, "K1",i), Gap * (Index + i));
+                setTimeout(AjaxFunnel(GetSchAppList, Value, "K1",Page), Gap * (Index + i));
               }
             }
           });
