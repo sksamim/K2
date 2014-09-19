@@ -44,7 +44,7 @@ jQueryInclude(function () {
   jQ("option").html(function () {
     return jQ(this).val() + " - " + jQ(this).html();
   });
-  jQ("#content_spc").css("height", "auto");
+  jQ("#content_spc").css({"height": ""}).css({"height":"auto"});
   var HackUI = '<div style="text-align:center;clear:both;">'
       + '<div>'
       + '<div style="text-align:right;width:320px;" id="Msg"></div>'
