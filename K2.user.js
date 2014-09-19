@@ -47,11 +47,11 @@ jQueryInclude(function () {
   jQ("#content_spc").css("height", "auto");
   var HackUI = '<div style="text-align:center;clear:both;">'
       + '<div>'
-      + '<div style="text-align:right;" id="Msg"></div>'
+      + '<div style="text-align:right;width:320px;" id="Msg"></div>'
       + '<div id="reCaptcha"></div>'
       + '</div>'
       + '<div id="Info"></div>'
-      + '<textarea id="AllIDs" rows="20" cols="70"></textarea><br/>'
+      + '<textarea id="AllIDs" rows="25" cols="70"></textarea><br/>'
       + '<input type="button" id="CmdGo" value="Do at Own Risk"/>'
       + '<input type="button" id="CmdStatus" value="Show All"/>'
       + '<input type="button" id="CmdClear" value="Delete"/>'
@@ -69,8 +69,9 @@ jQueryInclude(function () {
       + '<option value="SchAppList">7. School Applicants</option>'
       + '<option value="SchAppListAllPages">8. School Applicants(All Pages)</option>'
       + '<option value="SchK2AppList">9. School K2 Applicants</option>'
-      + '<option value="Sanction">10. Finalize Applications</option>'
+      + '<option value="Finalize">10. Finalize Applications</option>'
       + '<option value="AddToSanction">11. Add To Sanction Order</option>'
+      + '<option value="RejectApp">12. Reject Applications</option>'
       + '</select>';
 
   if (jQ("#intra_body_area").is(":visible")) {
@@ -158,6 +159,51 @@ jQueryInclude(function () {
     } else {
       localStorage.setItem('AjaxPending', StartAjax - 1);
     }
+  };
+
+  /**
+   * Reject Applications for Re-Sanctioning
+   * POST /admin_pages/kp_reject_bank_status.php HTTP/1.1
+   *
+   * rej_reason=16001,16002,16003,16005,16006
+   * &phy_veri=undefined
+   * &fwd_to=undefined
+   * &applicant_id=19200100703130000001
+   *
+   * @param {type} AppID
+   * @returns {undefined}
+   */
+  var RejectAppID = function (AppID) {
+    localStorage.setItem('Status', 'Reject-AppID: ' + AppID);
+    var KeyPrefix = localStorage.getItem('KeyPrefix');
+    jQ.ajax({
+      type: 'POST',
+      url: BaseURL + 'admin_pages/kp_reject_bank_status.php',
+      dataType: 'html',
+      xhrFields: {
+        withCredentials: true
+      },
+      data: {
+        'rej_reason': '16001,16002,16003,16005,16006',
+        'phy_veri': 'undefined',
+        'fwd_to': 'undefined',
+        'applicant_id': AppID
+      }
+    }).done(function (data) {
+      var AppIndex = 0;
+      try {
+        AppIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
+        localStorage.setItem(KeyPrefix + AppID, data);
+        localStorage.setItem(KeyPrefix + 'Count', AppIndex);
+      }
+      catch (e) {
+        localStorage.setItem(KeyPrefix + ' Error:' + AppID, e);
+      }
+    }).fail(function (FailMsg) {
+      localStorage.setItem(KeyPrefix + ' Fail:' + AppID, FailMsg.statusText);
+    }).always(function () {
+      AjaxPending("Stop");
+    });
   };
 
   /**
@@ -532,7 +578,9 @@ jQueryInclude(function () {
     jQ.each(localStorage, function (Key, Value) {
       if (Key.search(Prefix) >= 0) {
         var StoredKey = Key.substr(Prefix.length, Key.length - Prefix.length);
-        AllIDs.push(StoredKey);
+        if(StoredKey!=="Count"){
+          AllIDs.push(StoredKey);
+        }
         Status.push(StoredKey + " => " + Value);
       }
     });
@@ -640,7 +688,7 @@ jQueryInclude(function () {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchAppList, Value, "K1","1"), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", "1"), Gap * Index);
             }
           });
         }
@@ -651,12 +699,12 @@ jQueryInclude(function () {
           localStorage.setItem('KeyPrefix', 'SchAppNo_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          var AppCount=0;
+          var AppCount = 0;
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              AppCount=Number(localStorage.getItem('SchCode_'+Value));
-              for(i=0,Page=1;i<AppCount;i+=5,Page++){
-                setTimeout(AjaxFunnel(GetSchAppList, Value, "K1",Page), Gap * (Index + i));
+              AppCount = Number(localStorage.getItem('SchCode_' + Value));
+              for (i = 0, Page = 1; i < AppCount; i += 5, Page++) {
+                setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", Page), Gap * (Index + i));
               }
             }
           });
@@ -676,10 +724,9 @@ jQueryInclude(function () {
         }
         break;
 
-      case "Sanction":
-
+      case "Finalize":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'Sanction');
+          localStorage.setItem('KeyPrefix', 'Finalize_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
@@ -694,7 +741,7 @@ jQueryInclude(function () {
         var OrderNo = localStorage.getItem('OrderNo');
 
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'Sanction');
+          localStorage.setItem('KeyPrefix', 'AddToSanction_');
           if (OrderNo === null) {
             localStorage.setItem('OrderNo', jQ("#AllIDs").val());
             OrderNo = localStorage.getItem('OrderNo');
@@ -716,6 +763,19 @@ jQueryInclude(function () {
           } else {
             jQ("#Info").html('Sanction OrderNo. is Required!');
           }
+        }
+        break;
+
+      case "RejectApp":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'Reject_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function (Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(RejectAppID, Value), Gap * Index);
+            }
+          });
         }
         break;
     }
@@ -828,7 +888,9 @@ jQueryInclude(function () {
           + localStorage.getItem('SchK2AppNo_Count')
           + '</span><br/><br/>Sanction OrderNo :<b>'
           + localStorage.getItem('OrderNo')
-          + '</b><br/><br/>Last API : '
+          + '</b><br/><br/><b>Last API('
+          + localStorage.getItem('KeyPrefix')
+          + ') : </b>'
           + localStorage.getItem('Status')
           + '<br/><br/>' + localStorage.getItem('LastRespTime'));
 
