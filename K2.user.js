@@ -103,6 +103,10 @@ jQueryInclude(function () {
     "clear": "both"
   }).hide();
 
+  jQ("#AllIDs").css({
+    "width": "550px"
+  });
+
   /**
    * Limits No of AjaxCalls at a time
    *
@@ -578,7 +582,7 @@ jQueryInclude(function () {
     jQ.each(localStorage, function (Key, Value) {
       if (Key.search(Prefix) >= 0) {
         var StoredKey = Key.substr(Prefix.length, Key.length - Prefix.length);
-        if(StoredKey!=="Count"){
+        if (StoredKey !== "Count") {
           AllIDs.push(StoredKey);
         }
         Status.push(StoredKey + " => " + Value);
