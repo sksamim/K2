@@ -6,7 +6,7 @@
 // @grant         none
 // @downloadURL   https://github.com/abusalam/KanyashreeHelper/raw/master/K2.user.js
 // @updateURL     https://github.com/abusalam/KanyashreeHelper/raw/master/K2.user.js
-// @version       1.0
+// @version       1.0.1
 // @icon          http://www.gravatar.com/avatar/43f0ea57b814fbdcb3793ca3e76971cf
 // ==/UserScript==
 
