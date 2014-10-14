@@ -44,7 +44,7 @@ jQueryInclude(function () {
   jQ("option").html(function () {
     return jQ(this).val() + " - " + jQ(this).html();
   });
-  jQ("#content_spc").css({"height": ""}).css({"height":"auto"});
+  jQ("#content_spc").css({"height": ""}).css({"height": "auto"});
   var HackUI = '<div style="text-align:center;clear:both;">'
       + '<div>'
       + '<div style="text-align:right;width:320px;" id="Msg"></div>'
@@ -55,6 +55,7 @@ jQueryInclude(function () {
       + '<input type="button" id="CmdGo" value="Do at Own Risk"/>'
       + '<input type="button" id="CmdStatus" value="Show All"/>'
       + '<input type="button" id="CmdClear" value="Delete"/>'
+      + '<input type="button" id="CmdClearIDs" value="Clear IDs"/>'
       + '<input type="button" id="CmdClearStorage" value="Delete All"/>'
       + '</div>';
 
@@ -834,6 +835,18 @@ jQueryInclude(function () {
       }
     });
     localStorage.setItem(Prefix + 'Count', 0);
+  });
+
+  /**
+   * Clear Contents of the TextArea containing IDs
+   */
+  jQ("#CmdClearIDs").click(function () {
+    var SanctionNo = jQ("#AllIDs").val();
+    var Prefix = localStorage.getItem('KeyPrefix');
+    if ((SanctionNo.length == 14) && (Prefix == "Finalize_")) {
+      localStorage.setItem('OrderNo', SanctionNo);
+    }
+    jQ("#AllIDs").val("");
   });
 
   /**
