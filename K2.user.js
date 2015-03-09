@@ -354,10 +354,10 @@ jQueryInclude(function () {
   var GetSchListPending = function (BlockCode, Scheme) {
     localStorage.setItem('Status', 'GetSchListP: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
-    var UrlLength = 41;
+    var UrlLength = 51;
     if (Scheme === "K2") {
       Scheme = "_list_one.php";
-      UrlLength = 45;
+      UrlLength = 55;
     } else {
       Scheme = "_list.php";
     }
@@ -369,6 +369,7 @@ jQueryInclude(function () {
         withCredentials: true
       },
       data: {
+        'drop_down':'2014',
         'block_select': BlockCode,
         'tot_pen': BlockCode,
         'schcd': '',
