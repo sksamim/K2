@@ -497,25 +497,25 @@ jQueryInclude(function () {
     localStorage.setItem('Status', 'GetClgList: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
-      type: 'GET',
-      url: BaseURL + 'admin_pages/kp_block_verify_list_clg.php',
+      type: 'POST',
+      url: BaseURL + 'admin_pages/ajax/find_college_for_block.php',
       dataType: 'html',
       xhrFields: {
         withCredentials: true
       },
       data: {
-        'block_code': BlockCode
+        'block_code': BlockCode,
+        'slc_name': 'schcd'
       }
     }).done(function (data) {
       try {
         var ClgCode = '', Status = 0, ClgIndex = 0;
-        jQ(data).find("table.tftable tr").each(function (Index, Item) {
+        jQ(data).find("option").each(function (Index, Item) {
           if (Index > 0) {
-            ClgCode = jQ(Item).find("a").attr("onclick").substr(13, 10);
-            Status = jQ(Item).find("a").attr("onclick").indexOf('10042');
-            if ((ClgCode.length > 0) && (Status > 0)) {
+            ClgCode = jQ(Item).val();
+            ClgName = jQ(Item).text();
+            if (ClgCode.length > 0) {
               ClgIndex = parseInt(localStorage.getItem(KeyPrefix + 'Count')) + 1;
-              ClgName = jQ(Item).find("td:nth-child(2)").text();
               localStorage.setItem(KeyPrefix + ClgCode, ClgName);
               localStorage.setItem(KeyPrefix + 'Count', ClgIndex);
             }
