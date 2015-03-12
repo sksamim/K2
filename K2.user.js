@@ -454,10 +454,11 @@ jQueryInclude(function () {
   /**
    * kp_verify_applicant_list_clg.php?status=10042&schcd=19200301cl
    *
-   * @param {type} BlockCode
+   * @param {type} ClgCode
+   * @param {type} fYear
    * @returns {undefined}
    */
-  var GetClgAppList = function (ClgCode) {
+  var GetClgAppList = function (ClgCode, fYear) {
     localStorage.setItem('Status', 'GetClgAppList: ' + ClgCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
@@ -468,6 +469,7 @@ jQueryInclude(function () {
         withCredentials: true
       },
       data: {
+        'year': fYear,
         'status': '10042',
         'schcd': ClgCode
       }
@@ -687,12 +689,12 @@ jQueryInclude(function () {
 
       case "ClgAppList":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'ClgAppNo_');
+          localStorage.setItem('KeyPrefix', 'ClgAppNo-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetClgAppList, Value), Gap * Index);
+              setTimeout(AjaxFunnel(GetClgAppList, Value, fYear), Gap * Index);
             }
           });
         }
