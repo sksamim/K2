@@ -654,7 +654,7 @@ jQueryInclude(function () {
 
       case "SchList":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchCode_');
+          localStorage.setItem('KeyPrefix', 'SchCode-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
@@ -905,6 +905,7 @@ jQueryInclude(function () {
       var URL = BaseURL + "admin_pages/kp_homepage.php";
       jQ.get(URL);
     } else {
+      var fYear = jQ("#OptYear").val();
       jQ("#Msg").html('AjaxPending :<span>'
           + localStorage.getItem('AjaxPending')
           + '</span><br/>Blocks :<span>'
@@ -912,15 +913,15 @@ jQueryInclude(function () {
           + '</span><br/>Colleges :<span>'
           + localStorage.getItem('ClgCode_Count')
           + '</span><br/>College Applications :<span>'
-          + localStorage.getItem('ClgAppNo_Count')
+          + localStorage.getItem('ClgAppNo-' + fYear + '_Count')
           + '</span><br/>Schools :<span>'
-          + localStorage.getItem('SchCode_Count')
+          + localStorage.getItem('SchCode-' + fYear + '_Count')
           + '</span><br/>Schools K2 :<span>'
-          + localStorage.getItem('SchK2Code_Count')
+          + localStorage.getItem('SchK2Code-' + fYear + '_Count')
           + '</span><br/>School Applications :<span>'
-          + localStorage.getItem('SchAppNo_Count')
+          + localStorage.getItem('SchAppNo-' + fYear + '_Count')
           + '</span><br/>School K2 Applications :<span>'
-          + localStorage.getItem('SchK2AppNo_Count')
+          + localStorage.getItem('SchK2AppNo-' + fYear + '_Count')
           + '</span><br/><br/>Sanction OrderNo :<b>'
           + localStorage.getItem('OrderNo')
           + '</b><br/><br/><b>Last API('
