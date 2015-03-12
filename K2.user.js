@@ -260,9 +260,10 @@ jQueryInclude(function () {
    * Approve Applications for Sanctioning
    *
    * @param {type} AppID
+   * @param {type} fYear
    * @returns {undefined}
    */
-  var FinalizeAppID = function (AppID) {
+  var FinalizeAppID = function (AppID, fYear) {
     localStorage.setItem('Status', 'SanctionAppID: ' + AppID);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
@@ -277,7 +278,7 @@ jQueryInclude(function () {
         'phy_veri': 'undefined',
         'fwd_to': '10047',
         'applicant_id': AppID,
-        'table_year':'2014'
+        'table_year': fYear
       }
     }).done(function (data) {
       try {
@@ -740,12 +741,12 @@ jQueryInclude(function () {
 
       case "Finalize":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'Finalize_');
+          localStorage.setItem('KeyPrefix', 'Finalize-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(FinalizeAppID, Value), Gap * Index);
+              setTimeout(AjaxFunnel(FinalizeAppID, Value, fYear), Gap * Index);
             }
           });
         }
