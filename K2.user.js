@@ -356,9 +356,11 @@ jQueryInclude(function () {
    * block_select=192018&tot_pen=192018&schcd=&status=10042&mode=search
    *
    * @param {type} BlockCode
+   * @param {type} Scheme
+   * @param {type} fYear
    * @returns {undefined}
    */
-  var GetSchListPending = function (BlockCode, Scheme) {
+  var GetSchListPending = function (BlockCode, Scheme, fYear) {
     localStorage.setItem('Status', 'GetSchListP: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     var UrlLength = 51;
@@ -376,7 +378,7 @@ jQueryInclude(function () {
         withCredentials: true
       },
       data: {
-        'drop_down':'2014',
+        'drop_down': fYear,
         'block_select': BlockCode,
         'tot_pen': BlockCode,
         'schcd': '',
@@ -659,12 +661,12 @@ jQueryInclude(function () {
 
       case "SchListP":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchCode_');
+          localStorage.setItem('KeyPrefix', 'SchCode-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchListPending, Value), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchListPending, Value, fYear), Gap * Index);
             }
           });
         }
@@ -672,12 +674,12 @@ jQueryInclude(function () {
 
       case "SchK2ListP":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchK2Code_');
+          localStorage.setItem('KeyPrefix', 'SchK2Code-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchListPending, Value, 'K2'), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchListPending, Value, 'K2', fYear), Gap * Index);
             }
           });
         }
