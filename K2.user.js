@@ -52,14 +52,19 @@ jQueryInclude(function () {
       + '</div>'
       + '<div id="Info"></div>'
       + '<textarea id="AllIDs" rows="25" cols="70"></textarea><br/>'
-      + '<input type="button" id="CmdGo" value="Do at Own Risk"/>'
-      + '<input type="button" id="CmdStatus" value="Show All"/>'
-      + '<input type="button" id="CmdClear" value="Delete"/>'
+      + '<input type="button" id="CmdClear" value="Del"/>'
+      + '<input type="button" id="CmdGo" value="Go"/>'
       + '<input type="button" id="CmdClearIDs" value="Clear IDs"/>'
+      + '<input type="button" id="CmdStatus" value="Show"/>'
       + '<input type="button" id="CmdClearStorage" value="Delete All"/>'
       + '</div>';
 
   var ActionList = '<label for="">Go For: </label>'
+      + '<select id="OptYear" >'
+      + '<option value="2013">2013</option>'
+      + '<option value="2014">2014</option>'
+      + '<option value="2015">2015</option>'
+      + '</select>'
       + '<select id="OptAction" >'
       + '<option value="BlockList">1. Block List</option>'
       + '<option value="ClgList">2. College List</option>'
@@ -77,11 +82,11 @@ jQueryInclude(function () {
 
   if (jQ("#intra_body_area").is(":visible")) {
     jQ("#intra_body_area").after(HackUI);
-    jQ("#CmdGo").before(ActionList);
+    jQ("#CmdClear").before(ActionList);
   }
 
   jQ("[id^=Cmd]").css({
-    "margin": "10px",
+    "margin": "5px",
     "padding": "5px"
   });
 
@@ -255,9 +260,10 @@ jQueryInclude(function () {
    * Approve Applications for Sanctioning
    *
    * @param {type} AppID
+   * @param {type} fYear
    * @returns {undefined}
    */
-  var FinalizeAppID = function (AppID) {
+  var FinalizeAppID = function (AppID, fYear) {
     localStorage.setItem('Status', 'SanctionAppID: ' + AppID);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     jQ.ajax({
@@ -272,7 +278,7 @@ jQueryInclude(function () {
         'phy_veri': 'undefined',
         'fwd_to': '10047',
         'applicant_id': AppID,
-        'table_year':'2014'
+        'table_year': fYear
       }
     }).done(function (data) {
       try {
@@ -350,9 +356,11 @@ jQueryInclude(function () {
    * block_select=192018&tot_pen=192018&schcd=&status=10042&mode=search
    *
    * @param {type} BlockCode
+   * @param {type} Scheme
+   * @param {type} fYear
    * @returns {undefined}
    */
-  var GetSchListPending = function (BlockCode, Scheme) {
+  var GetSchListPending = function (BlockCode, Scheme, fYear) {
     localStorage.setItem('Status', 'GetSchListP: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     var UrlLength = 51;
@@ -370,7 +378,7 @@ jQueryInclude(function () {
         withCredentials: true
       },
       data: {
-        'drop_down':'2014',
+        'drop_down': fYear,
         'block_select': BlockCode,
         'tot_pen': BlockCode,
         'schcd': '',
@@ -606,9 +614,11 @@ jQueryInclude(function () {
   var GoForAction = function (ForStep) {
 
     var AllIDs = jQ("#AllIDs").val().split(",");
+    var fYear = jQ("#OptYear").val();
     var Gap = 250;
 
     if (ForStep !== "Prepare") {
+      jQ("#OptYear").prop("disabled", "disabled");
       jQ("#OptAction").prop("disabled", "disabled");
       jQ("#CmdGo").prop("disabled", "disabled");
     }
@@ -651,12 +661,12 @@ jQueryInclude(function () {
 
       case "SchListP":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchCode_');
+          localStorage.setItem('KeyPrefix', 'SchCode-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchListPending, Value), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchListPending, Value, fYear), Gap * Index);
             }
           });
         }
@@ -664,12 +674,12 @@ jQueryInclude(function () {
 
       case "SchK2ListP":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchK2Code_');
+          localStorage.setItem('KeyPrefix', 'SchK2Code-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchListPending, Value, 'K2'), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchListPending, Value, 'K2', fYear), Gap * Index);
             }
           });
         }
@@ -733,12 +743,12 @@ jQueryInclude(function () {
 
       case "Finalize":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'Finalize_');
+          localStorage.setItem('KeyPrefix', 'Finalize-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(FinalizeAppID, Value), Gap * Index);
+              setTimeout(AjaxFunnel(FinalizeAppID, Value, fYear), Gap * Index);
             }
           });
         }
@@ -806,8 +816,8 @@ jQueryInclude(function () {
    * Loads the contents of localStorage into the interface
    */
   jQ("#CmdStatus").click(function () {
-    if (jQ("#CmdStatus").val() === "Show All") {
-      jQ("#CmdStatus").val("Load All");
+    if (jQ("#CmdStatus").val() === "Show") {
+      jQ("#CmdStatus").val("Load");
       jQ("#AllIDs").hide();
       var vals = LoadData(localStorage.getItem('KeyPrefix'));
       var StatusDiv = document.createElement("div");
@@ -822,7 +832,7 @@ jQueryInclude(function () {
     } else {
       jQ("#AppStatus").remove();
       jQ("#AllIDs").show();
-      jQ("#CmdStatus").val("Show All");
+      jQ("#CmdStatus").val("Show");
     }
   });
 
@@ -914,6 +924,7 @@ jQueryInclude(function () {
           + '<br/><br/>' + localStorage.getItem('LastRespTime'));
 
       if (localStorage.getItem('AjaxPending') === "0") {
+        jQ("#OptYear").removeProp("disabled");
         jQ("#OptAction").removeProp("disabled");
         jQ("#CmdGo").removeProp("disabled");
       }
