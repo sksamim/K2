@@ -860,8 +860,9 @@ jQueryInclude(function () {
    */
   jQ("#CmdClearIDs").click(function () {
     var SanctionNo = jQ("#AllIDs").val();
+    var fYear = jQ("#OptYear").val();
     var Prefix = localStorage.getItem('KeyPrefix');
-    if ((SanctionNo.length == 14) && (Prefix == "Finalize_")) {
+    if ((SanctionNo.length == 14) && (Prefix == "Finalize-" + fYear + "_")) {
       localStorage.setItem('OrderNo', SanctionNo);
     }
     jQ("#AllIDs").val("");
@@ -871,15 +872,16 @@ jQueryInclude(function () {
    * Clears all the contents of localStorage
    */
   jQ("#CmdClearStorage").click(function () {
+    var fYear = jQ("#OptYear").val();
     localStorage.clear();
     localStorage.setItem('AjaxPending', 0);
     localStorage.setItem('BlkCode_Count', 0);
     localStorage.setItem('ClgCode_Count', 0);
-    localStorage.setItem('SchCode_Count', 0);
-    localStorage.setItem('SchK2Code_Count', 0);
-    localStorage.setItem('ClgAppNo_Count', 0);
-    localStorage.setItem('SchAppNo_Count', 0);
-    localStorage.setItem('SchK2AppNo_Count', 0);
+    localStorage.setItem('SchCode-' + fYear + '_Count', 0);
+    localStorage.setItem('SchK2Code-' + fYear + '_Count', 0);
+    localStorage.setItem('ClgAppNo-' + fYear + '_Count', 0);
+    localStorage.setItem('SchAppNo-' + fYear + '_Count', 0);
+    localStorage.setItem('SchK2AppNo-' + fYear + '_Count', 0);
     localStorage.setItem('SanctionCount', 0);
     jQ("#OptAction").trigger("change");
   });
