@@ -301,10 +301,13 @@ jQueryInclude(function () {
    *
    * block_select=192021&schcd=19202103702&status=10042&mode=search&download=Submit
    *
-   * @param {type} ClgCode
+   * @param {type} SchCode
+   * @param {type} Scheme
+   * @param {type} PageNo
+   * @param {type} fYear
    * @returns {undefined}
    */
-  var GetSchAppList = function (SchCode, Scheme, PageNo) {
+  var GetSchAppList = function (SchCode, Scheme, PageNo, fYear) {
     localStorage.setItem('Status', 'GetSchAppList: ' + SchCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     if (Scheme === "K2") {
@@ -320,6 +323,7 @@ jQueryInclude(function () {
         withCredentials: true
       },
       data: {
+        'year': fYear,
         'status': '10042',
         'schcd': SchCode,
         'pending': '1',
@@ -702,12 +706,12 @@ jQueryInclude(function () {
 
       case "SchAppList":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchAppNo_');
+          localStorage.setItem('KeyPrefix', 'SchAppNo-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", "1"), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", "1", fYear), Gap * Index);
             }
           });
         }
@@ -715,7 +719,7 @@ jQueryInclude(function () {
 
       case "SchAppListAllPages":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchAppNo_');
+          localStorage.setItem('KeyPrefix', 'SchAppNo-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           var AppCount = 0;
@@ -723,7 +727,7 @@ jQueryInclude(function () {
             if (Value.length > 0) {
               AppCount = Number(localStorage.getItem('SchCode_' + Value));
               for (i = 0, Page = 1; i < AppCount; i += 5, Page++) {
-                setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", Page), Gap * (Index + i));
+                setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", Page, fYear), Gap * (Index + i));
               }
             }
           });
@@ -732,12 +736,12 @@ jQueryInclude(function () {
 
       case "SchK2AppList":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchK2AppNo_');
+          localStorage.setItem('KeyPrefix', 'SchK2AppNo-' + fYear + '_');
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchAppList, Value, 'K2'), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchAppList, Value, 'K2', fYear), Gap * Index);
             }
           });
         }
