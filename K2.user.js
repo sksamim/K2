@@ -60,6 +60,11 @@ jQueryInclude(function () {
       + '</div>';
 
   var ActionList = '<label for="">Go For: </label>'
+      + '<select id="OptYear" >'
+      + '<option value="2013">2013</option>'
+      + '<option value="2014">2014</option>'
+      + '<option value="2015">2015</option>'
+      + '</select>'
       + '<select id="OptAction" >'
       + '<option value="BlockList">1. Block List</option>'
       + '<option value="ClgList">2. College List</option>'
@@ -606,9 +611,11 @@ jQueryInclude(function () {
   var GoForAction = function (ForStep) {
 
     var AllIDs = jQ("#AllIDs").val().split(",");
+    var fYear = jQ("#OptYear").val();
     var Gap = 250;
 
     if (ForStep !== "Prepare") {
+      jQ("#OptYear").prop("disabled", "disabled");
       jQ("#OptAction").prop("disabled", "disabled");
       jQ("#CmdGo").prop("disabled", "disabled");
     }
@@ -914,6 +921,7 @@ jQueryInclude(function () {
           + '<br/><br/>' + localStorage.getItem('LastRespTime'));
 
       if (localStorage.getItem('AjaxPending') === "0") {
+        jQ("#OptYear").removeProp("disabled");
         jQ("#OptAction").removeProp("disabled");
         jQ("#CmdGo").removeProp("disabled");
       }
