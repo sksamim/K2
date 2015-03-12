@@ -52,10 +52,10 @@ jQueryInclude(function () {
       + '</div>'
       + '<div id="Info"></div>'
       + '<textarea id="AllIDs" rows="25" cols="70"></textarea><br/>'
-      + '<input type="button" id="CmdGo" value="Do at Own Risk"/>'
-      + '<input type="button" id="CmdStatus" value="Show All"/>'
-      + '<input type="button" id="CmdClear" value="Delete"/>'
+      + '<input type="button" id="CmdClear" value="Del"/>'
+      + '<input type="button" id="CmdGo" value="Go"/>'
       + '<input type="button" id="CmdClearIDs" value="Clear IDs"/>'
+      + '<input type="button" id="CmdStatus" value="Show"/>'
       + '<input type="button" id="CmdClearStorage" value="Delete All"/>'
       + '</div>';
 
@@ -77,11 +77,11 @@ jQueryInclude(function () {
 
   if (jQ("#intra_body_area").is(":visible")) {
     jQ("#intra_body_area").after(HackUI);
-    jQ("#CmdGo").before(ActionList);
+    jQ("#CmdClear").before(ActionList);
   }
 
   jQ("[id^=Cmd]").css({
-    "margin": "10px",
+    "margin": "5px",
     "padding": "5px"
   });
 
@@ -806,8 +806,8 @@ jQueryInclude(function () {
    * Loads the contents of localStorage into the interface
    */
   jQ("#CmdStatus").click(function () {
-    if (jQ("#CmdStatus").val() === "Show All") {
-      jQ("#CmdStatus").val("Load All");
+    if (jQ("#CmdStatus").val() === "Show") {
+      jQ("#CmdStatus").val("Load");
       jQ("#AllIDs").hide();
       var vals = LoadData(localStorage.getItem('KeyPrefix'));
       var StatusDiv = document.createElement("div");
@@ -822,7 +822,7 @@ jQueryInclude(function () {
     } else {
       jQ("#AppStatus").remove();
       jQ("#AllIDs").show();
-      jQ("#CmdStatus").val("Show All");
+      jQ("#CmdStatus").val("Show");
     }
   });
 
