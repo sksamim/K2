@@ -6,13 +6,13 @@
 // @grant         none
 // @downloadURL   https://github.com/abusalam/K2/raw/master/K2.user.js
 // @updateURL     https://github.com/abusalam/K2/raw/master/K2.user.js
-// @version       1.0.1
+// @version       1.1.0
 // @icon          http://www.gravatar.com/avatar/43f0ea57b814fbdcb3793ca3e76971cf
 // ==/UserScript==
 
 /**
  * How can I use jQuery in Greasemonkey scripts in Google Chrome?
- * All Credits to Original Author for this wonderfull function.
+ * All Credits to Original Author for this wonderful function.
  *
  * @author  Erik Vergobbi Vold & Tyler G. Hicks-Wright
  * @link    http://stackoverflow.com/questions/2246901
@@ -884,6 +884,28 @@ jQueryInclude(function () {
     localStorage.setItem('SchK2AppNo-' + fYear + '_Count', 0);
     localStorage.setItem('SanctionCount', 0);
     jQ("#OptAction").trigger("change");
+  });
+
+  /**
+   * Reset Counters to 0 if not set after localStorage is cleared
+   */
+  jQ("#OptYear").change(function () {
+    var fYear = jQ(this).val();
+    if(!localStorage.getItem('SchCode-' + fYear + '_Count')){
+      localStorage.setItem('SchCode-' + fYear + '_Count', 0);
+    }
+    if(!localStorage.getItem('SchK2Code-' + fYear + '_Count')){
+      localStorage.setItem('SchK2Code-' + fYear + '_Count', 0);
+    }
+    if(!localStorage.getItem('ClgAppNo-' + fYear + '_Count')){
+      localStorage.setItem('ClgAppNo-' + fYear + '_Count', 0);
+    }
+    if(!localStorage.getItem('SchAppNo-' + fYear + '_Count')){
+      localStorage.setItem('SchAppNo-' + fYear + '_Count', 0);
+    }
+    if(!localStorage.getItem('SchK2AppNo-' + fYear + '_Count')){
+      localStorage.setItem('SchK2AppNo-' + fYear + '_Count', 0);
+    }
   });
 
   /**
