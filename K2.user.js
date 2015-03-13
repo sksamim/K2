@@ -6,7 +6,7 @@
 // @grant         none
 // @downloadURL   https://github.com/abusalam/K2/raw/master/K2.user.js
 // @updateURL     https://github.com/abusalam/K2/raw/master/K2.user.js
-// @version       1.1.1
+// @version       1.1.2
 // @icon          http://www.gravatar.com/avatar/43f0ea57b814fbdcb3793ca3e76971cf
 // ==/UserScript==
 
@@ -57,6 +57,7 @@ jQueryInclude(function () {
       + '<input type="button" id="CmdClearIDs" value="Clear IDs"/>'
       + '<input type="button" id="CmdStatus" value="Show"/>'
       + '<input type="button" id="CmdClearStorage" value="Delete All"/>'
+      + '<input type="button" id="CmdSelectAll" value="Check All"/>'
       + '</div>';
 
   var ActionList = '<label for="">Go For: </label>'
@@ -88,6 +89,12 @@ jQueryInclude(function () {
   jQ("[id^=Cmd]").css({
     "margin": "5px",
     "padding": "5px"
+  });
+
+  jQ("#CmdSelectAll").click(function(){
+    jQ("[type=checkbox]").each(function(){
+      this.checked=true;
+    });
   });
 
   jQ("#Msg").css({
