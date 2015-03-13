@@ -302,7 +302,7 @@ jQueryInclude(function () {
    * block_select=192021&schcd=19202103702&status=10042&mode=search&download=Submit
    *
    * @param {type} SchCode
-   * @param {type} Scheme
+   * @param {String} Scheme
    * @param {type} PageNo
    * @param {type} fYear
    * @returns {undefined}
@@ -364,7 +364,7 @@ jQueryInclude(function () {
    * @param {type} fYear
    * @returns {undefined}
    */
-  var GetSchListPending = function (BlockCode, Scheme, fYear) {
+  var GetSchListPending = function (BlockCode, fYear, Scheme) {
     localStorage.setItem('Status', 'GetSchListP: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     var UrlLength = 51;
@@ -685,7 +685,7 @@ jQueryInclude(function () {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchListPending, Value, 'K2', fYear), Gap * Index);
+              setTimeout(AjaxFunnel(GetSchListPending, Value, fYear, 'K2'), Gap * Index);
             }
           });
         }
