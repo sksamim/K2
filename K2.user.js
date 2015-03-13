@@ -119,9 +119,11 @@ jQueryInclude(function () {
    * @param {type} Fn
    * @param {type} Arg1
    * @param {type} Arg2
+   * @param {type} Arg3
+   * @param {type} Arg4
    * @returns {Boolean}
    */
-  var AjaxFunnel = function (Fn, Arg1, Arg2, Arg3) {
+  var AjaxFunnel = function (Fn, Arg1, Arg2, Arg3, Arg4) {
     var NextCallTimeOut = 2500;
     var PendingAjax = parseInt(localStorage.getItem('AjaxPending'));
     var AjaxLimit = parseInt(localStorage.getItem('AjaxLimit'));
@@ -135,8 +137,10 @@ jQueryInclude(function () {
         setTimeout(AjaxFunnel(Fn, Arg1), NextCallTimeOut);
       } else if (typeof Arg3 === "undefined") {
         setTimeout(AjaxFunnel(Fn, Arg1, Arg2), NextCallTimeOut);
-      } else {
+      } else if (typeof Arg4 === "undefined") {
         setTimeout(AjaxFunnel(Fn, Arg1, Arg2, Arg3), NextCallTimeOut);
+      } else {
+        setTimeout(AjaxFunnel(Fn, Arg1, Arg2, Arg3, Arg4), NextCallTimeOut);
       }
       return false;
     } else {
@@ -149,9 +153,12 @@ jQueryInclude(function () {
       } else if (typeof Arg3 === "undefined") {
         AjaxPending("Start");
         return Fn(Arg1, Arg2);
-      } else {
+      } else if (typeof Arg4 === "undefined") {
         AjaxPending("Start");
         return Fn(Arg1, Arg2, Arg3);
+      } else {
+        AjaxPending("Start");
+        return Fn(Arg1, Arg2, Arg3, Arg4);
       }
     }
   };
@@ -725,7 +732,7 @@ jQueryInclude(function () {
           var AppCount = 0;
           jQ.each(AllIDs, function (Index, Value) {
             if (Value.length > 0) {
-              AppCount = Number(localStorage.getItem('SchCode_' + Value));
+              AppCount = Number(localStorage.getItem('SchCode-' + fYear + '_' + Value));
               for (i = 0, Page = 1; i < AppCount; i += 5, Page++) {
                 setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", Page, fYear), Gap * (Index + i));
               }
