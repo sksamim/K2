@@ -6,7 +6,7 @@
 // @grant         none
 // @downloadURL   https://github.com/abusalam/K2/raw/master/K2.user.js
 // @updateURL     https://github.com/abusalam/K2/raw/master/K2.user.js
-// @version       1.1.0
+// @version       1.1.1
 // @icon          http://www.gravatar.com/avatar/43f0ea57b814fbdcb3793ca3e76971cf
 // ==/UserScript==
 
@@ -229,11 +229,11 @@ jQueryInclude(function () {
    * sanction_order=19200700213003
    * type=add
    *
-   * @param {string} AppID
+   * @param {string} fYear
    * @returns {void}
    */
-  var AddToSanction = function () {
-    localStorage.setItem('Status', 'AddToSanctionAppID: ');
+  var AddToSanction = function (fYear) {
+    localStorage.setItem('Status', 'AddToSanction-' + fYear + ': ');
     var OrderNo = localStorage.getItem('OrderNo');
     jQ.ajax({
       type: 'POST',
@@ -246,18 +246,19 @@ jQueryInclude(function () {
         'selectedIds': jQ("#AllIDs").val(),
         'sanction_order': OrderNo,
         'type': 'add',
+        'year': fYear,
         'security_code': jQ("#captchaCode").val()
       }
     }).done(function (data) {
       try {
         var SanctionStatus = jQ(data).find("div.sanction_block").next().text();
-        localStorage.setItem('AddToSanction:', SanctionStatus);
+        localStorage.setItem('AddToSanction-' + fYear + ':', SanctionStatus);
       }
       catch (e) {
-        localStorage.setItem('AddToSanction Error:', e);
+        localStorage.setItem('AddToSanction-' + fYear + ' Error:', e);
       }
     }).fail(function (FailMsg) {
-      localStorage.setItem('AddToSanction Fail:', FailMsg.statusText);
+      localStorage.setItem('AddToSanction-' + fYear + ' Fail:', FailMsg.statusText);
     }).always(function () {
       AjaxPending("Stop");
     });
@@ -771,7 +772,7 @@ jQueryInclude(function () {
         var OrderNo = localStorage.getItem('OrderNo');
 
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'AddToSanction_');
+          localStorage.setItem('KeyPrefix', 'AddToSanction-' + fYear + '_');
           if (OrderNo === null) {
             localStorage.setItem('OrderNo', jQ("#AllIDs").val());
             OrderNo = localStorage.getItem('OrderNo');
@@ -789,7 +790,7 @@ jQueryInclude(function () {
         } else {
           localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
           if (OrderNo.length === 14) {
-            setTimeout(AjaxFunnel(AddToSanction), Gap * Index);
+            setTimeout(AjaxFunnel(AddToSanction, fYear), Gap * Index);
           } else {
             jQ("#Info").html('Sanction OrderNo. is Required!');
           }
