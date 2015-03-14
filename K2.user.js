@@ -57,7 +57,7 @@ jQueryInclude(function () {
       + '<input type="button" id="CmdClearIDs" value="Clear IDs"/>'
       + '<input type="button" id="CmdStatus" value="Show"/>'
       + '<input type="button" id="CmdClearStorage" value="Delete All"/>'
-      + '<input type="button" id="CmdSelectAll" value="Check All"/>'
+      + '<input type="button" id="CmdSelectAll" value="Select All"/>'
       + '</div>';
 
   var ActionList = '<label for="">Go For: </label>'
@@ -93,8 +93,22 @@ jQueryInclude(function () {
 
   jQ("#CmdSelectAll").click(function(){
     jQ("[type=checkbox]").each(function(){
-      this.checked=true;
+      //this.checked=true;
     });
+    var AllApps="";
+    jQ(document.body).find("table.tftable tr td:nth-child(2)")
+        .each(function (Index, Item) {
+          AppNo = jQ(Item).text().trim().substr(0, 20);
+          AppName = jQ(Item).next().text();
+          Finalised = jQ(Item).next().next().text();
+          if(AllApps!==""){
+            AllApps=AllApps + "," + AppNo;
+          } else {
+            AllApps=AllApps + AppNo;
+          }
+
+        });
+    jQ("#AllIDs").text(AllApps);
   });
 
   jQ("#Msg").css({
