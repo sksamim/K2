@@ -833,7 +833,7 @@ jQueryInclude(function () {
 
       case "SchK2ListU":
         if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchK2AppNo-' + fYear + '_');
+          localStorage.setItem('KeyPrefix', 'SchK2Code-' + fYear + '_');
         } else {
           PendingSchoolList(AllIDs, Gap, fYear, "K2U");
         }
