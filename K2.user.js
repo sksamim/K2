@@ -6,7 +6,7 @@
 // @grant         none
 // @downloadURL   https://github.com/abusalam/K2/raw/master/K2.user.js
 // @updateURL     https://github.com/abusalam/K2/raw/master/K2.user.js
-// @version       1.1.2
+// @version       1.2.0
 // @icon          http://www.gravatar.com/avatar/43f0ea57b814fbdcb3793ca3e76971cf
 // ==/UserScript==
 
@@ -16,7 +16,7 @@
  *
  * @author  Erik Vergobbi Vold & Tyler G. Hicks-Wright
  * @link    http://stackoverflow.com/questions/2246901
- * @param   {reference} callback
+ * @param   callback
  * @returns {undefined}
  */
 function jQueryInclude(callback) {
@@ -62,23 +62,27 @@ jQueryInclude(function () {
 
   var ActionList = '<label for="">Go For: </label>'
       + '<select id="OptYear" >'
-      + '<option value="2013">2013</option>'
       + '<option value="2014">2014</option>'
+      + '<option value="2013">2013</option>'
       + '<option value="2015">2015</option>'
       + '</select>'
       + '<select id="OptAction" >'
       + '<option value="BlockList">1. Block List</option>'
       + '<option value="ClgList">2. College List</option>'
-      + '<option value="SchList">3. School List</option>'
-      + '<option value="SchListP">4. School List K1(Pending)</option>'
-      + '<option value="SchK2ListP">5. School List K2(Pending)</option>'
-      + '<option value="ClgAppList">6. College Applicants</option>'
-      + '<option value="SchAppList">7. School Applicants</option>'
-      + '<option value="SchAppListAllPages">8. School Applicants(All Pages)</option>'
+      + '<option value="ClgAppList">3. College Applicants</option>'
+      + '<option value="ClgAppListU">4. College Applicants(Upgradation)</option>'
+      + '<option value="SchList">5. School List(All Schools)</option>'
+      + '<option value="SchListP">6. School List K1</option>'
+      + '<option value="SchAppList">7. School K1 Applicants</option>'
+      + '<option value="SchK2ListP">8. School List K2</option>'
       + '<option value="SchK2AppList">9. School K2 Applicants</option>'
-      + '<option value="Finalize">10. Finalize Applications</option>'
-      + '<option value="AddToSanction">11. Add To Sanction Order</option>'
-      + '<option value="RejectApp">12. Reject Applications</option>'
+      + '<option value="SchListR">10. School List K1(Renewal)</option>'
+      + '<option value="SchAppListR">11. School K1 Applicants(Renewal)</option>'
+      + '<option value="SchK2ListU">12. School List K2(Upgradation)</option>'
+      + '<option value="SchK2AppListU">13. School K2 Applicants(Upgradation)</option>'
+      + '<option value="Finalize">14. Finalize Applications</option>'
+      + '<option value="AddToSanction">15. Add To Sanction Order</option>'
+      + '<option value="RejectApp">16. Reject Applications</option>'
       + '</select>';
 
   if (jQ("#intra_body_area").is(":visible")) {
@@ -91,20 +95,20 @@ jQueryInclude(function () {
     "padding": "5px"
   });
 
-  jQ("#CmdSelectAll").click(function(){
-    jQ("[type=checkbox]").each(function(){
+  jQ("#CmdSelectAll").click(function () {
+    jQ("[type=checkbox]").each(function () {
       //this.checked=true;
     });
-    var AllApps="";
+    var AllApps = "";
     jQ(document.body).find("table.tftable tr td:nth-child(2)")
         .each(function (Index, Item) {
           AppNo = jQ(Item).text().trim().substr(0, 20);
           AppName = jQ(Item).next().text();
           Finalised = jQ(Item).next().next().text();
-          if(AllApps!==""){
-            AllApps=AllApps + "," + AppNo;
+          if (AllApps !== "") {
+            AllApps = AllApps + "," + AppNo;
           } else {
-            AllApps=AllApps + AppNo;
+            AllApps = AllApps + AppNo;
           }
 
         });
@@ -339,7 +343,11 @@ jQueryInclude(function () {
   var GetSchAppList = function (SchCode, Scheme, PageNo, fYear) {
     localStorage.setItem('Status', 'GetSchAppList: ' + SchCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
-    if (Scheme === "K2") {
+    if (Scheme === "K2U") {
+      Scheme = "_list_upgradation.php";
+    } else if (Scheme === "K1R") {
+      Scheme = "_list_renewal.php";
+    } else if (Scheme === "K2") {
       Scheme = "_list_one.php";
     } else {
       Scheme = "_list.php";
@@ -389,7 +397,7 @@ jQueryInclude(function () {
    * block_select=192018&tot_pen=192018&schcd=&status=10042&mode=search
    *
    * @param {type} BlockCode
-   * @param {type} Scheme
+   * @param {String} Scheme
    * @param {type} fYear
    * @returns {undefined}
    */
@@ -397,7 +405,13 @@ jQueryInclude(function () {
     localStorage.setItem('Status', 'GetSchListP: ' + BlockCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
     var UrlLength = 51;
-    if (Scheme === "K2") {
+    if (Scheme === "K2U") {
+      Scheme = "_list_upgradation.php";
+      UrlLength = 63;
+    } else if (Scheme === "K1R") {
+      Scheme = "_list_renewal.php";
+      UrlLength = 59;
+    } else if (Scheme === "K2") {
       Scheme = "_list_one.php";
       UrlLength = 55;
     } else {
@@ -491,12 +505,17 @@ jQueryInclude(function () {
    * @param {type} fYear
    * @returns {undefined}
    */
-  var GetClgAppList = function (ClgCode, fYear) {
+  var GetClgAppList = function (ClgCode, fYear, Scheme) {
     localStorage.setItem('Status', 'GetClgAppList: ' + ClgCode);
     var KeyPrefix = localStorage.getItem('KeyPrefix');
+    if (Scheme === "K2U") {
+      Scheme = "_list_clg_upgradation.php";
+    } else {
+      Scheme = "_list_clg.php";
+    }
     jQ.ajax({
       type: 'GET',
-      url: BaseURL + 'admin_pages/kp_verify_applicant_list_clg.php',
+      url: BaseURL + 'admin_pages/kp_verify_applicant' + Scheme,
       dataType: 'html',
       xhrFields: {
         withCredentials: true
@@ -641,9 +660,53 @@ jQueryInclude(function () {
   };
 
   /**
+   * Gets different scheme argument combinations for
+   * all pending schools for all schemes
+   *
+   * @param AllIDs
+   * @param Gap
+   * @param fYear
+   * @param Scheme
+   * @constructor
+   */
+  var PendingSchoolList = function (AllIDs, Gap, fYear, Scheme) {
+    jQ.each(AllIDs, function (Index, Value) {
+      if (Value.length > 0) {
+        setTimeout(function () {
+          AjaxFunnel(GetSchListPending, Value, fYear, Scheme);
+        }, Gap * Index);
+      }
+    });
+  };
+
+  /**
+   * Gets different scheme argument combinations
+   * and all pages by using the pending count value
+   *
+   * @param AllIDs
+   * @param Gap
+   * @param fYear
+   * @param Scheme
+   * @constructor
+   */
+  var PendingSchoolAppList = function (AllIDs, Gap, fYear, Scheme) {
+    var AppCount = 0;
+    jQ.each(AllIDs, function (Index, Value) {
+      if (Value.length > 0) {
+        AppCount = Number(localStorage.getItem('SchCode-' + fYear + '_' + Value));
+        for (var i = 0, Page = 1; i < AppCount; i += 5, Page++) {
+          setTimeout(function () {
+            AjaxFunnel(GetSchAppList, Value, Scheme, Page, fYear);
+          }, Gap * (Index + i));
+        }
+      }
+    });
+  };
+
+  /**
    * Initiates the Selected Action to be performed
    *
-   * @param {type} ForStep
+   * @param {String} ForStep
    * @returns {undefined}
    */
   var GoForAction = function (ForStep) {
@@ -681,6 +744,32 @@ jQueryInclude(function () {
         }
         break;
 
+      case "ClgAppList":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'ClgAppNo-' + fYear + '_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function (Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetClgAppList, Value, fYear), Gap * Index);
+            }
+          });
+        }
+        break;
+
+      case "ClgAppListU":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'ClgAppNo-' + fYear + '_');
+        } else {
+          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
+          jQ.each(AllIDs, function (Index, Value) {
+            if (Value.length > 0) {
+              setTimeout(AjaxFunnel(GetClgAppList, Value, fYear, "K2U"), Gap * Index);
+            }
+          });
+        }
+        break;
+
       case "SchList":
         if (ForStep === "Prepare") {
           localStorage.setItem('KeyPrefix', 'SchCode-' + fYear + '_');
@@ -698,38 +787,7 @@ jQueryInclude(function () {
         if (ForStep === "Prepare") {
           localStorage.setItem('KeyPrefix', 'SchCode-' + fYear + '_');
         } else {
-          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function (Index, Value) {
-            if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchListPending, Value, fYear), Gap * Index);
-            }
-          });
-        }
-        break;
-
-      case "SchK2ListP":
-        if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'SchK2Code-' + fYear + '_');
-        } else {
-          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function (Index, Value) {
-            if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchListPending, Value, fYear, 'K2'), Gap * Index);
-            }
-          });
-        }
-        break;
-
-      case "ClgAppList":
-        if (ForStep === "Prepare") {
-          localStorage.setItem('KeyPrefix', 'ClgAppNo-' + fYear + '_');
-        } else {
-          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function (Index, Value) {
-            if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetClgAppList, Value, fYear), Gap * Index);
-            }
-          });
+          PendingSchoolList(AllIDs, Gap, fYear, "K1");
         }
         break;
 
@@ -737,29 +795,31 @@ jQueryInclude(function () {
         if (ForStep === "Prepare") {
           localStorage.setItem('KeyPrefix', 'SchAppNo-' + fYear + '_');
         } else {
-          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function (Index, Value) {
-            if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", "1", fYear), Gap * Index);
-            }
-          });
+          PendingSchoolAppList(AllIDs, Gap, fYear, "K1");
         }
         break;
 
-      case "SchAppListAllPages":
+      case "SchListR":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchCode-' + fYear + '_');
+        } else {
+          PendingSchoolList(AllIDs, Gap, fYear, "K1R");
+        }
+        break;
+
+      case "SchAppListR":
         if (ForStep === "Prepare") {
           localStorage.setItem('KeyPrefix', 'SchAppNo-' + fYear + '_');
         } else {
-          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          var AppCount = 0;
-          jQ.each(AllIDs, function (Index, Value) {
-            if (Value.length > 0) {
-              AppCount = Number(localStorage.getItem('SchCode-' + fYear + '_' + Value));
-              for (i = 0, Page = 1; i < AppCount; i += 5, Page++) {
-                setTimeout(AjaxFunnel(GetSchAppList, Value, "K1", Page, fYear), Gap * (Index + i));
-              }
-            }
-          });
+          PendingSchoolAppList(AllIDs, Gap, fYear, "K1R");
+        }
+        break;
+
+      case "SchK2ListP":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchK2Code-' + fYear + '_');
+        } else {
+          PendingSchoolList(AllIDs, Gap, fYear, "K2");
         }
         break;
 
@@ -767,12 +827,23 @@ jQueryInclude(function () {
         if (ForStep === "Prepare") {
           localStorage.setItem('KeyPrefix', 'SchK2AppNo-' + fYear + '_');
         } else {
-          localStorage.setItem(localStorage.getItem('KeyPrefix') + 'Count', 0);
-          jQ.each(AllIDs, function (Index, Value) {
-            if (Value.length > 0) {
-              setTimeout(AjaxFunnel(GetSchAppList, Value, 'K2', fYear), Gap * Index);
-            }
-          });
+          PendingSchoolAppList(AllIDs, Gap, fYear, "K2");
+        }
+        break;
+
+      case "SchK2ListU":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchK2AppNo-' + fYear + '_');
+        } else {
+          PendingSchoolList(AllIDs, Gap, fYear, "K2U");
+        }
+        break;
+
+      case "SchK2AppListU":
+        if (ForStep === "Prepare") {
+          localStorage.setItem('KeyPrefix', 'SchK2AppNo-' + fYear + '_');
+        } else {
+          PendingSchoolAppList(AllIDs, Gap, fYear, "K2U");
         }
         break;
 
@@ -844,6 +915,7 @@ jQueryInclude(function () {
    * Perform the Selected Action
    */
   jQ("#CmdGo").click(function () {
+    jQ("#CmdClear").trigger("click");
     GoForAction("Perform");
   });
 
@@ -920,19 +992,19 @@ jQueryInclude(function () {
    */
   jQ("#OptYear").change(function () {
     var fYear = jQ(this).val();
-    if(!localStorage.getItem('SchCode-' + fYear + '_Count')){
+    if (!localStorage.getItem('SchCode-' + fYear + '_Count')) {
       localStorage.setItem('SchCode-' + fYear + '_Count', 0);
     }
-    if(!localStorage.getItem('SchK2Code-' + fYear + '_Count')){
+    if (!localStorage.getItem('SchK2Code-' + fYear + '_Count')) {
       localStorage.setItem('SchK2Code-' + fYear + '_Count', 0);
     }
-    if(!localStorage.getItem('ClgAppNo-' + fYear + '_Count')){
+    if (!localStorage.getItem('ClgAppNo-' + fYear + '_Count')) {
       localStorage.setItem('ClgAppNo-' + fYear + '_Count', 0);
     }
-    if(!localStorage.getItem('SchAppNo-' + fYear + '_Count')){
+    if (!localStorage.getItem('SchAppNo-' + fYear + '_Count')) {
       localStorage.setItem('SchAppNo-' + fYear + '_Count', 0);
     }
-    if(!localStorage.getItem('SchK2AppNo-' + fYear + '_Count')){
+    if (!localStorage.getItem('SchK2AppNo-' + fYear + '_Count')) {
       localStorage.setItem('SchK2AppNo-' + fYear + '_Count', 0);
     }
   });
